@@ -506,7 +506,7 @@ export class Controller {
     total.position.set(WIN_W / 2 - 130, 0);
     st.info.addChild(respins, gold, mult, total);
     const upd = (r: { respinsLeft: number; coinSum: number; multSum: number }, award: number, pop = false) => {
-      respins.set('●'.repeat(r.respinsLeft) + '○'.repeat(Math.max(0, 3 - r.respinsLeft)), pop);
+      respins.set(`${r.respinsLeft}`, pop);
       gold.set(money(r.coinSum * bet), pop);
       mult.set(`×${Math.max(1, r.multSum)}`, pop);
       total.set(money(award), pop);
