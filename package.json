@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "sim": "vite-node tools/simulate.ts",
-    "assets": "python3 tools/extract_assets.py"
+    "art": "node tools/art/render.mjs && python3 tools/art/pack.py",
+    "audio": "python3 tools/audio/compose.py"
   },
   "dependencies": {
     "gsap": "^3.15.0",

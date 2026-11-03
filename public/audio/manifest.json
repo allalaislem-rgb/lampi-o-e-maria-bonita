@@ -1,0 +1,207 @@
+{
+ "sfx_click": {
+  "loop": false,
+  "duration": 0.506
+ },
+ "sfx_spin": {
+  "loop": false,
+  "duration": 1.217
+ },
+ "sfx_reelstop": {
+  "loop": false,
+  "duration": 1.197
+ },
+ "sfx_reelstop_quick": {
+  "loop": false,
+  "duration": 1.15
+ },
+ "sfx_scatter1": {
+  "loop": false,
+  "duration": 3.414
+ },
+ "sfx_scatter2": {
+  "loop": false,
+  "duration": 3.285
+ },
+ "sfx_scatter3": {
+  "loop": false,
+  "duration": 3.334
+ },
+ "sfx_anticipation": {
+  "loop": false,
+  "duration": 4.715
+ },
+ "sfx_win_small": {
+  "loop": false,
+  "duration": 2.616
+ },
+ "sfx_win_medium": {
+  "loop": false,
+  "duration": 2.911
+ },
+ "sfx_coin": {
+  "loop": false,
+  "duration": 1.183
+ },
+ "sfx_tick": {
+  "loop": false,
+  "duration": 0.65
+ },
+ "sfx_wild": {
+  "loop": false,
+  "duration": 3.184
+ },
+ "sfx_wild_expand": {
+  "loop": false,
+  "duration": 3.771
+ },
+ "sfx_gunshot": {
+  "loop": false,
+  "duration": 3.968
+ },
+ "sfx_arrival": {
+  "loop": false,
+  "duration": 4.875
+ },
+ "sfx_raid": {
+  "loop": false,
+  "duration": 4.492
+ },
+ "sfx_transform": {
+  "loop": false,
+  "duration": 1.536
+ },
+ "sfx_trigger": {
+  "loop": false,
+  "duration": 4.741
+ },
+ "sfx_transition": {
+  "loop": false,
+  "duration": 5.181
+ },
+ "sfx_intro_escape": {
+  "loop": false,
+  "duration": 4.724
+ },
+ "sfx_intro_hideout": {
+  "loop": false,
+  "duration": 5.658
+ },
+ "sfx_intro_last": {
+  "loop": false,
+  "duration": 5.935
+ },
+ "sfx_multiplier": {
+  "loop": false,
+  "duration": 2.791
+ },
+ "sfx_retrigger": {
+  "loop": false,
+  "duration": 3.331
+ },
+ "sfx_chest_hover": {
+  "loop": false,
+  "duration": 0.884
+ },
+ "sfx_chest_open": {
+  "loop": false,
+  "duration": 3.396
+ },
+ "sfx_chest_empty": {
+  "loop": false,
+  "duration": 1.72
+ },
+ "sfx_treasure": {
+  "loop": false,
+  "duration": 3.527
+ },
+ "sfx_couple": {
+  "loop": false,
+  "duration": 5.102
+ },
+ "sfx_lock": {
+  "loop": false,
+  "duration": 2.807
+ },
+ "sfx_respin": {
+  "loop": false,
+  "duration": 1.428
+ },
+ "sfx_respin_reset": {
+  "loop": false,
+  "duration": 2.948
+ },
+ "sfx_emblem": {
+  "loop": false,
+  "duration": 3.333
+ },
+ "sfx_grand": {
+  "loop": false,
+  "duration": 5.682
+ },
+ "sfx_bigwin_hit": {
+  "loop": false,
+  "duration": 4.304
+ },
+ "sfx_bigwin_end": {
+  "loop": false,
+  "duration": 4.945
+ },
+ "sfx_tier_up": {
+  "loop": false,
+  "duration": 4.149
+ },
+ "sfx_feature_end": {
+  "loop": false,
+  "duration": 4.25
+ },
+ "sfx_error": {
+  "loop": false,
+  "duration": 1.078
+ },
+ "music_base": {
+  "loop": true,
+  "loopStart": 0.5,
+  "loopEnd": 38.9
+ },
+ "music_base_tension": {
+  "loop": true,
+  "loopStart": 0.5,
+  "loopEnd": 38.9
+ },
+ "music_escape": {
+  "loop": true,
+  "loopStart": 0.5,
+  "loopEnd": 28.326077097505667
+ },
+ "music_escape_hype": {
+  "loop": true,
+  "loopStart": 0.5,
+  "loopEnd": 28.326077097505667
+ },
+ "music_hideout": {
+  "loop": true,
+  "loopStart": 0.5,
+  "loopEnd": 25.76315192743764
+ },
+ "music_hideout_tension": {
+  "loop": true,
+  "loopStart": 0.5,
+  "loopEnd": 25.76315192743764
+ },
+ "music_laststand": {
+  "loop": true,
+  "loopStart": 0.5,
+  "loopEnd": 20.5
+ },
+ "music_laststand_intense": {
+  "loop": true,
+  "loopStart": 0.5,
+  "loopEnd": 20.5
+ },
+ "music_bigwin": {
+  "loop": true,
+  "loopStart": 0.5,
+  "loopEnd": 8.5
+ }
+}

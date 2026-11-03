@@ -1,55 +1,58 @@
 /**
- * HideoutView – 12 chest interactive pick board. Renders states it receives
- * from the engine; a click only *requests* a pick (onPick), the engine decides.
+ * HideoutView – 12-chest interactive pick board. A click only *requests* a pick
+ * (onPick); the engine decides what the chest contains.
  */
 import { Container, Sprite, Text, Graphics } from 'pixi.js';
 import gsap from 'gsap';
-import type { ChestPrize } from '../engine/features/hideout';
-import type { PublicHideout } from '../engine/features/hideout';
+import type { ChestPrize, PublicHideout } from '../engine/features/hideout';
 import { tex } from './assets';
-import { glowTex, goldText, plainText, frameTex, raysTex } from './gfx';
+import { T, goldText, plainText, destroyDeep } from './gfx';
 import type { FX } from './fx';
 import { money } from './format';
 import { sound } from '../audio/sound';
-import { WIN_W, WIN_H, FRAME_PAD } from './reels';
+import { WIN_W, WIN_H } from './reels';
 
 const COLS = 4;
 const CW = WIN_W / COLS;
 const CH = WIN_H / 3;
+const CHEST_H = 138;
 
 class Chest extends Container {
   glow: Sprite;
+  shadow: Graphics;
   sprite: Sprite;
   prizeLayer = new Container();
   opened = false;
-  baseScale = 1;
+  base = 1;
+  bob: gsap.core.Tween | null = null;
   constructor(public index: number) {
     super();
-    this.glow = new Sprite(glowTex());
+    this.shadow = new Graphics().ellipse(0, CHEST_H * 0.46, 70, 12).fill({ color: 0x000000, alpha: 0.45 });
+    this.glow = new Sprite(T.glow());
     this.glow.anchor.set(0.5);
     this.glow.blendMode = 'add';
-    this.glow.alpha = 0.15;
-    this.glow.scale.set(0.9, 0.6);
-    this.glow.y = 10;
+    this.glow.alpha = 0.12;
+    this.glow.scale.set(2.2, 1.7);
+    this.glow.tint = 0xffb040;
     this.sprite = new Sprite(tex('chest_closed'));
     this.sprite.anchor.set(0.5);
-    this.baseScale = 132 / this.sprite.texture.height;
-    this.sprite.scale.set(this.baseScale);
-    this.addChild(this.glow, this.sprite, this.prizeLayer);
+    this.base = CHEST_H / (this.sprite.texture.height / 2.0) / 2.0;
+    this.setTex('chest_closed');
+    this.addChild(this.shadow, this.glow, this.sprite, this.prizeLayer);
     this.eventMode = 'static';
     this.cursor = 'pointer';
-    this.on('pointerover', () => {
-      if (this.opened || !this.eventMode || this.eventMode === 'none') return;
-      gsap.to(this.sprite.scale, { x: this.baseScale * 1.08, y: this.baseScale * 1.08, duration: 0.2 });
-      gsap.to(this.glow, { alpha: 0.6, duration: 0.2 });
-    });
-    this.on('pointerout', () => {
-      if (this.opened) return;
-      gsap.to(this.sprite.scale, { x: this.baseScale, y: this.baseScale, duration: 0.2 });
-      gsap.to(this.glow, { alpha: 0.15, duration: 0.2 });
-    });
-    // idle bob
-    gsap.to(this.sprite, { y: -4, duration: 1.4 + Math.random() * 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: Math.random() });
+    this.bob = gsap.to(this.sprite, { y: -5, duration: 1.3 + Math.random() * 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: Math.random() });
+  }
+  setTex(name: string) {
+    this.sprite.texture = tex(name);
+    const k = CHEST_H / this.sprite.texture.height;
+    this.base = k;
+    this.sprite.scale.set(k);
+  }
+  hover(on: boolean) {
+    if (this.opened) return;
+    gsap.to(this.sprite.scale, { x: this.base * (on ? 1.1 : 1), y: this.base * (on ? 1.1 : 1), duration: 0.2, ease: 'back.out(2)' });
+    gsap.to(this.glow, { alpha: on ? 0.75 : 0.12, duration: 0.2 });
   }
 }
 
@@ -58,13 +61,13 @@ export function prizeVisual(p: ChestPrize, bet: number): { texture: string; titl
     case 'coins':
       return { texture: 'coins_pile', title: 'GOLD', value: money(p.value * bet), color: '#ffe48a' };
     case 'multiplier':
-      return { texture: 'coin_star', title: 'MULTIPLIER', value: `+${p.value}×`, color: '#ffd760' };
+      return { texture: 'token_mult', title: 'MULTIPLIER', value: `+${p.value}×`, color: '#ffb0a0' };
     case 'extraPick':
-      return { texture: 'gem_star', title: 'EXTRA PICK', value: '+1', color: '#fff1b0' };
+      return { texture: 'gold_star', title: 'EXTRA PICK', value: '+1', color: '#fff1b0' };
     case 'treasure':
-      return { texture: 'chest_gems', title: "LAMPIÃO'S TREASURE", value: money(p.value * bet), color: '#ffcf5a' };
+      return { texture: 'chest_treasure', title: "LAMPIÃO'S TREASURE", value: money(p.value * bet), color: '#ffcf5a' };
     case 'medallion':
-      return { texture: 'medallion', title: "MARIA'S MEDALLION", value: 'MULT ×2', color: '#ff9d8a' };
+      return { texture: 'medallion', title: "MARIA'S MEDALLION", value: '×2', color: '#ff9d8a' };
     case 'empty':
       return { texture: '', title: 'EMPTY', value: '', color: '#b9a38a' };
   }
@@ -72,18 +75,27 @@ export function prizeVisual(p: ChestPrize, bet: number): { texture: string; titl
 
 export class HideoutView extends Container {
   chests: Chest[] = [];
+  frame: Sprite;
   onPick: (i: number) => void = () => {};
   private enabled = false;
   private bet = 100;
 
   constructor(private fx: FX) {
     super();
-    const frame = new Sprite(frameTex('hideout', WIN_W, WIN_H, FRAME_PAD, 'wood'));
-    frame.position.set(-FRAME_PAD, -FRAME_PAD);
-    this.addChild(frame);
+    this.frame = new Sprite(tex('frame_hideout'));
+    this.frame.width = 1120;
+    this.frame.height = 710;
+    this.frame.position.set(-60, -110);
+    this.addChild(this.frame);
     for (let i = 0; i < 12; i++) {
       const c = new Chest(i);
-      c.position.set((i % COLS) * CW + CW / 2, Math.floor(i / COLS) * CH + CH / 2 + 4);
+      c.position.set((i % COLS) * CW + CW / 2, Math.floor(i / COLS) * CH + CH / 2 + 2);
+      c.on('pointerover', () => {
+        if (!this.enabled || c.opened) return;
+        c.hover(true);
+        sound.play('chest_hover', { rate: 0.9 + Math.random() * 0.2 });
+      });
+      c.on('pointerout', () => c.hover(false));
       c.on('pointertap', () => {
         if (!this.enabled || c.opened) return;
         sound.play('click');
@@ -99,12 +111,19 @@ export class HideoutView extends Container {
     state.chests.forEach((ch, i) => {
       const c = this.chests[i];
       c.opened = false;
-      c.prizeLayer.removeChildren();
-      c.sprite.texture = tex('chest_closed');
-      c.sprite.alpha = 1;
+      c.prizeLayer.removeChildren().forEach((x) => destroyDeep(x));
+      c.setTex('chest_closed');
       c.sprite.tint = 0xffffff;
       c.alpha = 1;
+      c.glow.alpha = 0.12;
       if (ch.opened && ch.prize) this.showOpened(c, ch.prize, false);
+    });
+  }
+
+  /** Staggered entrance of the chests. */
+  entrance() {
+    this.chests.forEach((c, i) => {
+      gsap.fromTo(c, { y: c.y - 60, alpha: 0 }, { y: c.y, alpha: 1, duration: 0.5, delay: 0.05 * i, ease: 'bounce.out' });
     });
   }
 
@@ -116,70 +135,80 @@ export class HideoutView extends Container {
   private showOpened(c: Chest, prize: ChestPrize, animate: boolean, dim = false) {
     c.opened = true;
     c.cursor = 'default';
-    gsap.killTweensOf(c.sprite);
+    c.bob?.kill();
     c.sprite.y = 0;
-    const special = prize.type === 'treasure';
-    c.sprite.texture = tex(prize.type === 'empty' ? 'chest_wood' : special ? 'chest_gems' : 'chest_open');
-    c.sprite.scale.set(132 / c.sprite.texture.height);
-    c.sprite.tint = prize.type === 'empty' ? 0x777066 : 0xb8a898;
+    c.setTex(prize.type === 'empty' ? 'chest_empty' : prize.type === 'treasure' ? 'chest_treasure' : 'chest_open');
+    if (prize.type !== 'treasure') c.sprite.tint = 0xb8a090;
     const vis = prizeVisual(prize, this.bet);
     const layer = c.prizeLayer;
-    layer.removeChildren();
+    layer.removeChildren().forEach((x) => destroyDeep(x));
     if (vis.texture && prize.type !== 'treasure') {
       const icon = new Sprite(tex(vis.texture));
       icon.anchor.set(0.5);
-      icon.scale.set(70 / icon.texture.height);
-      icon.y = -44;
+      icon.scale.set(78 / icon.texture.height);
+      icon.y = -34;
       layer.addChild(icon);
-      if (animate) gsap.from(icon, { y: 10, alpha: 0, duration: 0.6, ease: 'back.out(2)' });
+      if (prize.type === 'multiplier') {
+        const t = goldText(vis.value, 30);
+        t.y = -34;
+        layer.addChild(t);
+      }
+      if (animate) gsap.from(icon, { y: 20, alpha: 0, duration: 0.6, ease: 'back.out(2)' });
     }
+    const pill = new Graphics().roundRect(-CW / 2 + 14, 38, CW - 28, 30, 15).fill({ color: 0x120804, alpha: 0.78 }).stroke({ width: 1.5, color: 0xc98a1c, alpha: 0.8 });
     const title = plainText(vis.title, vis.title.length > 12 ? 13 : 16, vis.color);
-    title.y = 56;
-    const val: Text | null = vis.value ? goldText(vis.value, 32) : null;
-    if (val) val.y = 16;
-    const bgPill = new Graphics().roundRect(-CW / 2 + 16, 42, CW - 32, 28, 14).fill({ color: 0x120804, alpha: 0.7 });
-    layer.addChild(bgPill, title);
-    if (val) layer.addChild(val);
+    title.y = 53;
+    layer.addChild(pill, title);
+    let val: Text | null = null;
+    if (vis.value && prize.type !== 'multiplier') {
+      val = goldText(vis.value, 32);
+      val.y = 14;
+      layer.addChild(val);
+    }
     if (dim) {
-      c.alpha = 0.45;
+      c.alpha = 0.42;
       return;
     }
-    c.glow.alpha = prize.type === 'empty' ? 0 : 0.7;
+    c.glow.alpha = prize.type === 'empty' ? 0 : 0.6;
     if (animate && val) gsap.from(val.scale, { x: 0.2, y: 0.2, duration: 0.5, ease: 'back.out(3)', delay: 0.1 });
   }
 
-  /** Engine-confirmed open animation. */
+  /** Engine-confirmed opening animation. */
   async open(index: number, prize: ChestPrize) {
     const c = this.chests[index];
     const gx = this.x + c.x * this.scale.x;
     const gy = this.y + c.y * this.scale.y;
+    c.bob?.kill();
+    // anticipation: rattle with rising glow
     await new Promise<void>((res) => {
-      gsap.to(c.sprite, { rotation: 0.08, duration: 0.06, yoyo: true, repeat: 7, ease: 'sine.inOut', onComplete: () => res() });
+      gsap.to(c.glow, { alpha: 0.9, duration: 0.45 });
+      gsap.to(c.sprite, { rotation: 0.07, duration: 0.05, yoyo: true, repeat: 9, ease: 'sine.inOut', onComplete: () => res() });
     });
     c.sprite.rotation = 0;
     if (prize.type === 'empty') {
-      sound.play('chestEmpty');
-      this.fx.dustBurst(gx, gy, 8, 120);
+      sound.play('chest_empty');
+      this.fx.dustBurst(gx, gy - 20, 10, 140);
     } else {
-      sound.play(prize.type === 'treasure' || prize.type === 'medallion' ? 'treasure' : 'chestOpen');
-      const rays = new Sprite(raysTex());
+      sound.play(prize.type === 'treasure' || prize.type === 'medallion' ? 'treasure' : 'chest_open');
+      const rays = new Sprite(T.rays());
       rays.anchor.set(0.5);
       rays.blendMode = 'add';
-      rays.position.set(c.x, c.y);
-      rays.scale.set(0.2);
+      rays.tint = 0xffd070;
+      rays.position.set(c.x, c.y - 20);
+      rays.scale.set(0.15);
       this.addChildAt(rays, 1);
-      gsap.to(rays.scale, { x: 0.9, y: 0.9, duration: 0.5, ease: 'power2.out' });
-      gsap.to(rays, { rotation: 1, alpha: 0, duration: 1.4, delay: 0.3, onComplete: () => rays.destroy() });
-      this.fx.flash(gx, gy, 2.4);
-      this.fx.sparkBurst(gx, gy, prize.type === 'treasure' ? 50 : 26, 420);
-      if (prize.type === 'coins' || prize.type === 'treasure') this.fx.coinFountain(gx, gy, prize.type === 'treasure' ? 30 : 12);
+      gsap.to(rays.scale, { x: 0.75, y: 0.75, duration: 0.45, ease: 'power2.out' });
+      gsap.to(rays, { rotation: 1.2, alpha: 0, duration: 1.4, delay: 0.3, onComplete: () => rays.destroy() });
+      this.fx.flash(gx, gy - 20, 2.2);
+      this.fx.ring(gx, gy - 20, 1.2);
+      this.fx.sparkBurst(gx, gy - 20, prize.type === 'treasure' ? 50 : 26, 420);
+      if (prize.type === 'coins' || prize.type === 'treasure') this.fx.coinFountain(gx, gy - 20, prize.type === 'treasure' ? 30 : 12, 0.8);
     }
     this.showOpened(c, prize, true);
-    gsap.fromTo(c.sprite.scale, { x: c.sprite.scale.x * 1.25, y: c.sprite.scale.y * 1.25 }, { x: c.sprite.scale.x, y: c.sprite.scale.y, duration: 0.5, ease: 'back.out(3)' });
-    await new Promise((r) => setTimeout(r, 650));
+    gsap.fromTo(c.sprite.scale, { x: c.base * 1.25, y: c.base * 1.25 }, { x: c.base, y: c.base, duration: 0.5, ease: 'back.out(3)' });
+    await new Promise((r) => setTimeout(r, 600));
   }
 
-  /** End of feature: show what the other chests contained. */
   async revealRest(board: ChestPrize[]) {
     let k = 0;
     for (let i = 0; i < board.length; i++) {

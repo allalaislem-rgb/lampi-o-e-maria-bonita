@@ -1,25 +1,51 @@
-import { Assets, Texture } from 'pixi.js';
+/**
+ * Asset loading – all artwork is original, code-authored (tools/art) and packed
+ * into texture atlases (public/gfx/*.json + .webp) plus a few large standalone
+ * images (backgrounds, frames, logo, titles, win banners).
+ */
+import { Assets, Texture, type Spritesheet } from 'pixi.js';
 
-const NAMES = [
-  'sym_lampiao', 'sym_maria', 'sym_wild', 'sym_wanted', 'sym_map', 'sym_emblem', 'sym_hat', 'sym_cartucheira', 'sym_revolver',
-  'sym_sanfona', 'sym_rifles', 'sym_facao', 'sym_cactus', 'sym_cantil',
-  'logo', 'lantern', 'wheel', 'jug', 'saddle', 'drum', 'rooster', 'sunflower', 'hibiscus', 'bougainvillea',
-  'chest_closed', 'chest_open', 'chest_gems', 'chest_gold', 'chest_wood', 'coins_pile', 'coin_gold', 'coin_star', 'medallion',
-  'mult_2', 'mult_3', 'mult_5', 'mult_10', 'xmult_2', 'xmult_3', 'xmult_5', 'xmult_10',
-  'gem_star', 'gem_heart', 'gem_diamond', 'emblem_sun', 'banner_star', 'scarf', 'hat_straps',
-  'title_escape', 'title_hideout', 'title_laststand',
+const ATLASES = ['symbols', 'objects'];
+export const STANDALONE = [
+  'logo', 'title_escape', 'title_hideout', 'title_last', 'win_big', 'win_mega', 'win_epic',
+  'frame_base', 'frame_hideout', 'frame_last',
+  ...['base', 'escape', 'hideout', 'laststand'].flatMap((s) => [`bg_${s}_back`, `bg_${s}_mid`, `bg_${s}_front`]),
 ];
-const JPG = ['bg_village', 'bg_hideout', 'bg_canyon', 'bg_escape'];
+
+const frames: Record<string, { x: number; y: number; w: number; h: number; sheet: string; sw: number; sh: number }> = {};
 
 export async function loadAssets(onProgress: (p: number) => void) {
   const list = [
-    ...NAMES.map((n) => ({ alias: n, src: `./assets/${n}.png` })),
-    ...JPG.map((n) => ({ alias: n, src: `./assets/${n}.jpg` })),
+    ...ATLASES.map((n) => ({ alias: `atlas_${n}`, src: `./gfx/${n}.json` })),
+    ...STANDALONE.map((n) => ({ alias: n, src: `./gfx/${n}.webp` })),
   ];
   Assets.addBundle('game', list);
-  await Assets.loadBundle('game', onProgress);
+  const loaded = await Assets.loadBundle('game', onProgress);
+  for (const n of ATLASES) {
+    const sheet = loaded[`atlas_${n}`] as Spritesheet;
+    const meta = sheet.data.meta.size!;
+    for (const [k, f] of Object.entries(sheet.data.frames)) {
+      const fr = f.frame;
+      frames[k] = { x: fr.x, y: fr.y, w: fr.w, h: fr.h, sheet: `./gfx/${n}.webp`, sw: meta.w, sh: meta.h };
+    }
+  }
 }
 
 export function tex(name: string): Texture {
-  return Assets.get<Texture>(name) ?? Texture.WHITE;
+  const t = Assets.cache.has(name) ? (Assets.get<Texture>(name) as Texture) : null;
+  if (!t) {
+    console.warn('missing texture', name);
+    return Texture.WHITE;
+  }
+  return t;
+}
+
+/** CSS for showing an atlas frame in the DOM (paytable, buy cards) at a given box size. */
+export function atlasCss(name: string, boxW: number, boxH: number): string {
+  const f = frames[name];
+  if (!f) return '';
+  const k = Math.min(boxW / f.w, boxH / f.h);
+  const w = f.w * k;
+  const h = f.h * k;
+  return `display:inline-block;width:${w.toFixed(1)}px;height:${h.toFixed(1)}px;background:url(${f.sheet}) no-repeat;background-size:${(f.sw * k).toFixed(1)}px ${(f.sh * k).toFixed(1)}px;background-position:${(-f.x * k).toFixed(1)}px ${(-f.y * k).toFixed(1)}px`;
 }

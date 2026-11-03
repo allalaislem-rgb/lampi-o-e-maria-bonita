@@ -9,8 +9,9 @@ separate bonus games, three Bonus Buy options and two random base-game events.
 
 ## Quick start
 
-Requirements: Node.js 18+ (tested on Node 22). Python 3 with Pillow, NumPy and SciPy is needed
-only if you want to re-cut the sprites.
+Requirements: Node.js 18+ (tested on Node 22). All art and audio are already built into `public/`,
+so nothing else is needed to play. Regenerating them is optional and needs extra tools; see
+[`docs/ART_AND_AUDIO.md`](docs/ART_AND_AUDIO.md).
 
 ```bash
 npm install
@@ -29,10 +30,13 @@ Then open the URL that Vite prints (http://localhost:5173). Other scripts:
 | `npm run preview` | Serve the production build |
 | `npm test` | Unit and integration tests (Vitest) |
 | `npm run sim -- [spins] [featureRuns]` | Monte-Carlo RTP simulation of the dev math |
-| `npm run assets` | Re-extract the sprites from `art/source/sheet1.jpg` / `sheet2.jpg` |
+| `npm run art` | Re-render all code-authored artwork and repack the atlases (needs Playwright + Python/Pillow) |
+| `npm run audio` | Re-compose the score and SFX (needs Python/numpy/scipy + ffmpeg) |
 
-**Controls:** Space or the round button spins. Click Spin during a win presentation to skip it.
-The **⚙ (settings)** button opens the QA panel, which can force any bonus or random event on the next spin.
+**Controls:** Press **PLAY** on the title screen (browsers only allow audio after a click). Space or the
+round button spins; clicking Spin during a win presentation skips it. The 🔊 button opens **Sound**
+settings, with separate Music and SFX volume and a mute switch. The **⚙** button opens the QA panel,
+which can force any bonus or random event on the next spin.
 
 ## Implemented features
 
@@ -90,7 +94,7 @@ src/
     gameState.ts              Game State Manager (phase machine, allowed actions/transitions)
     server.ts                 GameServer facade: idempotent requests, max-win cap, settlement, persistence/recovery
     client.ts                 GameClient: the async API the UI uses (backend-ready seam)
-  audio/sound.ts              Sound manager (Web Audio synthesis)
+  audio/sound.ts              Dynamic audio engine (stems, intensity layers, ducking, volume channels)
   ui/                         ← presentation only
     controller.ts             Animation Controller: requests outcomes and animates them
     stage.ts                  Pixi app, responsive layout, transitions, banners, big wins
@@ -103,9 +107,12 @@ src/
     hud.ts, overlays.ts       DOM HUD and modal dialogs
 tests/                        Vitest: math, features, server (wallet, buy, states, cap, recovery)
 tools/simulate.ts             RTP simulator
-tools/extract_assets.py       Sprite extraction from the concept sheets
-art/source/                   Supplied sprite sheets + GDD
-docs/                         MATH_ASSUMPTIONS.md, ARCHITECTURE.md
+tools/art/                    Code-authored artwork (SVG) → Chromium render → atlas packer
+tools/audio/                  Offline score + SFX synthesis (numpy) → ogg/m4a + loop manifest
+public/gfx, public/ui         Generated atlases / backgrounds (WebP) and vector HUD buttons (SVG)
+public/audio, public/fonts    Generated music stems & SFX; bundled OFL fonts
+art/source/                   GDD
+docs/                         MATH_ASSUMPTIONS.md, ARCHITECTURE.md, ART_AND_AUDIO.md
 ```
 
 **Authoritative outcomes.** The UI never decides anything. `Controller` calls `GameClient`, which
@@ -135,11 +142,19 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/MATH_ASSUMPTIONS.m
 - the max-win cap on every route
 - recovery of an interrupted Hideout or Great Escape, and that a settled round is never paid twice
 
-## Remaining placeholders
+## Art & audio
 
-- **Artwork.** Symbols, props, titles and backgrounds are cut from the two supplied concept sprite sheets (Sheet 1 for all symbols, as the client chose). They are low resolution (about 200 px source, upscaled ×2), and the three backgrounds are about 280 px source plates that are upscaled and blurred. Final high-resolution art, animated character rigs (Spine) and layered parallax backgrounds are still needed.
-- **Generated graphics.** The reel frames, plates, glows, particles and Wild-reel panels are drawn procedurally in code.
-- **Audio.** All sound effects and music are synthesised at runtime as placeholders for a sound designer's assets.
-- **Fonts.** Rye and Alfa Slab One load from Google Fonts, with serif fallbacks when offline.
-- **Mathematics.** Every value is a development default (see `docs/MATH_ASSUMPTIONS.md`).
-- **Platform.** The wallet and RNG are simulated and development-only. Responsible-gaming tools, localisation and jurisdiction configuration are not implemented.
+All graphics, music and sound effects are original. They are authored in code and rendered
+offline (see [`docs/ART_AND_AUDIO.md`](docs/ART_AND_AUDIO.md)); nothing from the earlier concept
+sheets remains.
+
+- **Art:** symbols, characters, environments (4 scenes × 3 parallax layers), reel frames, objects, VFX and the logo are drawn as layered vector illustration, rasterised in Chromium and packed into WebP texture atlases (about 2.3 MB). Spinning reels use pre-rendered motion-blur symbol textures.
+- **Score:** an original forró / baião soundtrack with layered intensity stems for each mode, seamless loops and dynamic crossfades.
+- **Sound effects:** 40 dedicated effects synchronised to the animations.
+
+## Remaining placeholders and limitations
+
+- **Art style:** the artwork is stylised vector illustration produced by code. It is not hand-painted 3D renders or Spine-rigged character animation. Commissioned art can replace it file-for-file through the existing pipeline.
+- **Audio:** the music and effects are synthesised (modelled instruments), not recorded live. Recorded stems can be dropped in with the same names and loop metadata.
+- **Mathematics:** every value is a development default (see `docs/MATH_ASSUMPTIONS.md`).
+- **Platform:** the wallet and RNG are simulated and development-only. Responsible-gaming tools, localisation and jurisdiction configuration are not implemented.

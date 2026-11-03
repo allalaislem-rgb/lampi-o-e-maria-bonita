@@ -44,7 +44,8 @@ export class Controller {
     this.hud.setWin(0, 'WIN', false);
     this.bind();
     this.stage.layout();
-    sound.setMusic('base');
+    void sound.setMode('base');
+    this.stage.reels.onAnticipation = (on) => sound.setIntensity(on ? 1 : 0, on ? 0.6 : 1.5);
     // recovery of an interrupted game
     if (s.phase === 'BONUS_CHOICE' && s.pendingChoice) {
       this.busy = true;
@@ -101,11 +102,14 @@ export class Controller {
       h.setAutoplay(n);
       void this.spin();
     });
+    const syncSoundIcon = () => {
+      (h.soundBtn.querySelector('img') as HTMLImageElement).src = sound.muted || (sound.musicVolume === 0 && sound.sfxVolume === 0) ? './ui/btn_mute.svg' : './ui/btn_sound.svg';
+    };
+    syncSoundIcon();
     h.soundBtn.addEventListener('click', () => {
       sound.unlock();
-      sound.setMuted(!sound.muted);
-      h.soundBtn.classList.toggle('off', sound.muted);
-      UI.toast(sound.muted ? 'Sound OFF' : 'Sound ON', 900);
+      sound.play('click');
+      UI.showSoundSettings(syncSoundIcon);
     });
     document.getElementById('btn-menu')!.addEventListener('click', () => {
       sound.play('click');
@@ -195,7 +199,7 @@ export class Controller {
     this.hud.setBusy(true, false, this.autoLeft > 0);
     this.hud.setWin(0, 'WIN', false);
     this.hud.setBalance(s.balance - s.bet);
-    sound.play('spinStart');
+    sound.play('spin');
     this.stage.reels.allowWildInSpin = true;
     this.stage.reels.startSpin();
 
@@ -226,10 +230,15 @@ export class Controller {
 
     const triggered = resp.featureStarted ? [resp.featureStarted] : resp.pendingChoice ?? [];
     if (o.win > 0) {
-      sound.play('win');
+      const xw = o.win / resp.bet;
+      sound.play(xw >= 5 ? 'win_medium' : 'win_small');
+      if (xw >= 5) {
+        const c = this.stage.reels.g(2, 1);
+        this.stage.fx.coinFountain(c.x, c.y, Math.min(40, 10 + Math.round(xw)), 0.9);
+      }
       this.hud.setWin(o.win);
       const big = o.win >= BIG_WIN_X * resp.bet;
-      await this.stage.reels.presentWins(o.lineWins, money(o.win), this.winSignal, !triggered.length && !big && this.autoLeft === 0);
+      await this.stage.reels.presentWins(o.lineWins, o.win, money, this.winSignal, !triggered.length && !big && this.autoLeft === 0);
       if (big) {
         await this.stage.bigWin(o.win, resp.bet, money);
         this.winSignal.cancelled = true;
@@ -239,6 +248,9 @@ export class Controller {
       this.winSignal.cancelled = true;
       const pos = [...(triggered.includes('greatEscape') ? o.scatters.WANT : []), ...(triggered.includes('hideout') ? o.scatters.MAP : []), ...(triggered.includes('lastStand') ? o.scatters.EMBL : [])];
       this.stage.reels.clearWins();
+      sound.play('trigger');
+      sound.setIntensity(1, 0.3);
+      for (const f of triggered) sound.prefetch(THEME[f]);
       await this.stage.reels.celebrateScatters(pos);
       if (this.autoLeft > 0 && GAME_CONFIG.autoplay.stopOnFeature) this.stopAuto();
       let f = resp.featureStarted;
@@ -304,15 +316,18 @@ export class Controller {
     let feature = this.snap.feature as PublicFeature;
     const bet = this.snap.bet; // bet cannot change while a round is open
     const baseWin = this.snap.baseWin;
+    sound.prefetch(THEME[f]);
     await st.transition(() => {
       st.env.set(THEME[f], true);
       st.reels.clearWins();
       st.reels.clearOverlays();
+      st.reels.setFrame(f === 'greatEscape' ? 'escape' : 'base');
       st.logo.visible = false;
       st.info.clearAll();
       st.setMode(f === 'greatEscape' ? 'reels' : f === 'hideout' ? 'hideout' : 'laststand');
-      sound.setMusic(THEME[f]);
+      void sound.setMode(THEME[f]);
     });
+    await st.bonusIntro(THEME[f]);
     await UI.showIntro(f, feature.feature === 'greatEscape' ? feature.spinsLeft : undefined, resumed);
 
     let settled: RoundSummary | null = null;
@@ -330,8 +345,9 @@ export class Controller {
       st.logo.visible = true;
       st.setMode('reels');
       st.reels.clearOverlays();
+      st.reels.setFrame('base');
       if (this.lastBaseGrid) st.reels.showGrid(this.lastBaseGrid);
-      sound.setMusic('base');
+      void sound.setMode('base');
     });
     if (settled) {
       this.hud.setBalance(settled.balanceAfter);
@@ -356,7 +372,7 @@ export class Controller {
 
     for (;;) {
       st.reels.startSpin();
-      sound.play('spinStart');
+      sound.play('spin');
       const r = await this.client.freeSpin(this.forceFsRaid ? { forceRaid: true } : undefined);
       this.forceFsRaid = false;
       const res = r.result;
@@ -364,22 +380,23 @@ export class Controller {
       await wait(st.reels.turbo ? 100 : 250);
       await st.reels.stopOn(res.grid);
       if (res.raidReels.length) {
-        await st.callout('CANGACEIRO RAID!', '', 900, ['hat_straps']);
+        await st.callout('CANGACEIRO RAID!', '', 900, ['sym_hat']);
         sound.play('raid');
         await st.reels.wildReel(res.raidReels, 'raid');
       }
       if (res.expandedReels.length) await st.reels.wildReel(res.expandedReels, 'expand', res.grid);
       if (res.spinWin > 0) {
-        sound.play('win');
-        const label = res.qualifying && res.multiplierBefore > 1 ? `${money(res.spinWin)}  (×${res.multiplierBefore})` : money(res.spinWin);
+        sound.play(res.spinWin >= 5 * bet ? 'win_medium' : 'win_small');
+        const suffix = res.qualifying && res.multiplierBefore > 1 ? `  ×${res.multiplierBefore}` : '';
         total.set(money(res.totalWin), true);
         this.hud.setWin(baseWin + res.totalWin, 'TOTAL WIN');
         const sig = { cancelled: false };
-        await st.reels.presentWins(res.lineWins, label, sig, false);
+        await st.reels.presentWins(res.lineWins, res.spinWin, money, sig, false, suffix);
         if (res.spinWin >= BIG_WIN_X * bet) await st.bigWin(res.spinWin, bet, money);
       }
       if (res.multiplierAfter !== res.multiplierBefore) {
-        sound.play('multiplier', { pitch: 1 + res.multiplierAfter * 0.05 });
+        sound.play('multiplier', { rate: 1 + res.multiplierAfter * 0.04 });
+        sound.setIntensity(Math.min(1, (res.multiplierAfter - 1) / 4));
         meter.set(res.multiplierAfter);
         await wait(500);
       }
@@ -413,6 +430,8 @@ export class Controller {
     };
     upd(h);
     st.hideout.setup(h, bet);
+    st.hideout.entrance();
+    sound.setIntensity(h.picksLeft <= 1 ? 1 : 0);
     this.hud.setWin(baseWin + h.coinTotal * h.multiplier * bet, 'TOTAL WIN', false);
     st.hideout.setEnabled(true);
     UI.toast('Choose a chest!', 1600);
@@ -430,12 +449,13 @@ export class Controller {
           const s = r.snapshot.feature as Extract<PublicFeature, { feature: 'hideout' }> | null;
           upd({ picksLeft: res.picksLeft, multiplier: res.multiplier, coinTotal: res.coinTotal, hasTreasure: s ? s.hasTreasure : res.prize.type === 'treasure' || couple.lamp.tint === 0xffffff, hasMedallion: s ? s.hasMedallion : res.prize.type === 'medallion' || couple.maria.tint === 0xffffff, couplesFortune: s ? s.couplesFortune : res.couplesFortune }, true);
           this.hud.setWin(baseWin + res.award, 'TOTAL WIN');
+          sound.setIntensity(res.picksLeft === 1 ? 1 : 0);
           if (res.prize.type === 'extraPick') await st.callout('EXTRA PICK!', '+1', 900, ['gem_star']);
           if (res.prize.type === 'medallion') await st.callout("MARIA'S MEDALLION", 'MULTIPLIER ×2', 1100, ['medallion']);
-          if (res.prize.type === 'treasure') await st.callout("LAMPIÃO'S TREASURE", money(res.prize.value * bet), 1100, ['chest_gems']);
+          if (res.prize.type === 'treasure') await st.callout("LAMPIÃO'S TREASURE", money(res.prize.value * bet), 1100, ['chest_treasure']);
           if (res.couplesFortune) {
-            sound.play('fanfare');
-            await st.callout("COUPLE'S FORTUNE!", `+${money(GAME_CONFIG.hideout.couplesFortune * bet)}`, 2000, ['sym_lampiao', 'gem_heart', 'sym_maria']);
+            sound.play('couple');
+            await st.callout("COUPLE'S FORTUNE!", `+${money(GAME_CONFIG.hideout.couplesFortune * bet)}`, 2000, ['sym_lampiao', 'heart_gem', 'sym_maria']);
           }
           if (r.settled) {
             if (res.reveal) await st.hideout.revealRest(res.reveal);
@@ -470,6 +490,9 @@ export class Controller {
       total.set(money(award), pop);
     };
     st.laststand.setCells(ls.cells, bet);
+    st.laststand.entrance();
+    const intensity = (left: number, cells: unknown[]) => sound.setIntensity(left <= 1 || cells.filter(Boolean).length >= 12 ? 1 : 0.25);
+    intensity(ls.respinsLeft, ls.cells);
     const initialAward = Math.min(ls.coinSum * Math.max(1, ls.multSum) * bet, this.snap.maxWin);
     upd(ls, initialAward);
     this.hud.setWin(baseWin + initialAward, 'TOTAL WIN', false);
@@ -479,13 +502,16 @@ export class Controller {
       const res = r.result;
       await st.laststand.play(res, bet, st.reels.turbo);
       const reset = res.landed.length > 0;
+      if (reset && !res.ended) sound.play('respin_reset');
+      intensity(res.respinsLeft, res.cells);
       upd(res, res.award, true);
       this.hud.setWin(baseWin + res.award, 'TOTAL WIN');
       if (reset && !res.ended) gsap.fromTo(respins.scale, { x: 1.2, y: 1.2 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });
       if (r.settled) {
         if (res.full) {
+          sound.play('grand');
           await st.laststand.celebrateFull();
-          await st.callout('GRAND TREASURE!', money(GAME_CONFIG.lastStand.grandTreasure * bet), 2200, ['chest_gems', 'emblem_sun', 'chest_gems']);
+          await st.callout('GRAND TREASURE!', money(GAME_CONFIG.lastStand.grandTreasure * bet), 2200, ['chest_treasure', 'emblem_sun', 'chest_treasure']);
         } else if (res.capped) await st.callout('MAXIMUM WIN!', '', 1600);
         await wait(600);
         return r.settled;

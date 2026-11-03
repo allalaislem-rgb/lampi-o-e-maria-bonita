@@ -48,6 +48,11 @@ export class Hud {
     cancelAnimationFrame(this.winAnim);
     this.winLabel.textContent = label;
     this.winPanel.classList.toggle('lit', c > 0);
+    if (c > 0) {
+      this.winPanel.classList.remove('pop');
+      void this.winPanel.offsetWidth;
+      this.winPanel.classList.add('pop');
+    }
     const from = Number(this.win.dataset.v || 0);
     this.win.dataset.v = String(c);
     if (!animate || c <= from) {
