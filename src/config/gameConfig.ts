@@ -89,10 +89,10 @@ const baseReel = (wild: number, want: number, map: number, embl: number): Partia
 
 export const BASE_REEL_WEIGHTS: ReelWeights = [
   baseReel(0, 8, 9, 7),
-  baseReel(21, 8, 9, 7),
-  baseReel(21, 8, 9, 7),
-  baseReel(21, 8, 9, 7),
-  baseReel(21, 8, 9, 7),
+  baseReel(20, 8, 9, 7),
+  baseReel(20, 8, 9, 7),
+  baseReel(20, 8, 9, 7),
+  baseReel(20, 8, 9, 7),
 ];
 
 /** Great Escape reels: richer symbols, wilds expand. Other scatters removed. DEV DEFAULT */
@@ -173,7 +173,7 @@ export const GAME_CONFIG = {
     /** Initial gold symbols when the feature is bought (natural trigger uses landed emblems). */
     boughtInitialCount: { 3: 70, 4: 22, 5: 8 } as Record<number, number>,
     /** Probability that an empty position lands a symbol on each respin. DEV DEFAULT */
-    landChance: 0.1,
+    landChance: 0.098,
     /** What lands (weights). */
     symbolWeights: { coin: 86, mult: 9, emblem: 5 },
     /** Gold coin values, multiples of TOTAL bet. DEV DEFAULT */

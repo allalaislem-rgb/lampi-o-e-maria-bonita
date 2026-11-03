@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a0d06" />
+    <title>Lampião &amp; Maria Bonita – The Legend of the Sertão</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Rye&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="game"></div>
+
+    <!-- Loading screen -->
+    <div id="loader">
+      <img src="./assets/logo.png" alt="Lampião & Maria Bonita" />
+      <div class="bar"><div class="fill"></div></div>
+      <p class="hint">Loading the sertão…</p>
+    </div>
+
+    <!-- Bonus Buy (left column on desktop, row on mobile) -->
+    <div id="buy" class="hidden">
+      <button class="buy-btn" data-feature="greatEscape">
+        <img src="./assets/title_escape.png" alt="" />
+        <span class="buy-label">BUY</span><span class="buy-price" data-price="greatEscape">–</span>
+      </button>
+      <button class="buy-btn" data-feature="hideout">
+        <img src="./assets/title_hideout.png" alt="" />
+        <span class="buy-label">BUY</span><span class="buy-price" data-price="hideout">–</span>
+      </button>
+      <button class="buy-btn" data-feature="lastStand">
+        <img src="./assets/title_laststand.png" alt="" />
+        <span class="buy-label">BUY</span><span class="buy-price" data-price="lastStand">–</span>
+      </button>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-left">
+        <button class="icon-btn" id="btn-menu" title="Paytable &amp; rules"><img src="./assets/btn_info.png" alt="Info" /></button>
+        <button class="icon-btn" id="btn-sound" title="Sound"><img src="./assets/btn_sound.png" alt="Sound" /></button>
+        <button class="icon-btn" id="btn-history" title="Round history"><img src="./assets/btn_trophy.png" alt="History" /></button>
+        <button class="icon-btn" id="btn-dev" title="Developer QA panel"><img src="./assets/btn_settings.png" alt="Dev" /></button>
+      </div>
+      <div class="panel" id="panel-balance"><label>BALANCE</label><output id="balance">–</output></div>
+      <div class="panel bet-panel">
+        <button class="round-btn" id="bet-minus"><img src="./assets/btn_minus.png" alt="−" /></button>
+        <div class="panel inner"><label>BET</label><output id="bet">–</output></div>
+        <button class="round-btn" id="bet-plus"><img src="./assets/btn_plus.png" alt="+" /></button>
+      </div>
+      <div class="panel" id="panel-win"><label id="win-label">WIN</label><output id="win">0.00</output></div>
+      <div class="hud-right">
+        <button class="icon-btn" id="btn-turbo" title="Turbo"><img src="./assets/btn_auto.png" alt="Turbo" /></button>
+        <button id="btn-spin" title="Spin (Space)"><img src="./assets/btn_spin.png" alt="Spin" /><span id="auto-count"></span></button>
+        <button class="icon-btn" id="btn-auto" title="Autoplay"><img src="./assets/btn_play.png" alt="Autoplay" /></button>
+      </div>
+    </div>
+
+    <div id="demo-badge">DEMO · SIMULATED CREDITS · DEV RNG · NOT CERTIFIED</div>
+    <div id="toast"></div>
+    <div id="overlay"></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

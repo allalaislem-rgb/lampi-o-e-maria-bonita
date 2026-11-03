@@ -32,7 +32,7 @@ ASSETS = {
     'sym_cactus': (1, (1021, 229, 1121, 367), 'cuth'),
     'sym_cantil': (1, (1148, 237, 1262, 369), 'cut'),
     # ---- props / decor (sheet 1) ----
-    'lantern': (1, (975, 352, 1072, 516), 'cuth'),
+    'lantern': (1, (975, 352, 1072, 516), 'cut'),
     'saddle': (1, (1080, 372, 1272, 516), 'cuth'),
     'rooster': (1, (12, 375, 131, 510), 'cuth'),
     'wheel': (1, (156, 378, 289, 508), 'cuth'),
@@ -69,6 +69,7 @@ ASSETS = {
     'btn_minus': (1, (750, 776, 806, 834), 'cut'),
     'btn_plus': (1, (890, 774, 950, 836), 'cut'),
     # ---- sheet 2: environments, bonus UI, VFX ----
+    'bg_escape': (1, (425, 641, 581, 704), 'raw'),
     'bg_village': (2, (12, 620, 292, 765), 'raw'),
     'bg_hideout': (2, (312, 620, 540, 760), 'raw'),
     'bg_canyon': (2, (560, 616, 814, 762), 'raw'),
@@ -115,13 +116,14 @@ def cut(img, holes=False, thr=222):
         sizes = nd.sum(fg, lab3, range(1, n3 + 1))
         keep = [i + 1 for i, s in enumerate(sizes) if s > max(40, sizes.max() * 0.04)]
         fg = np.isin(lab3, keep)
+    # remove the light fringe: drop rim pixels that are bright/desaturated (JPEG halo)
+    edge = fg & ~nd.binary_erosion(fg, iterations=2)
+    halo = edge & (mn > 150) & ((mx - mn) < 60)
+    fg = fg & ~halo
+    fg = nd.binary_erosion(fg, iterations=1) | (fg & (mn < 120))
     alpha = fg.astype(np.float32)
-    # soft edge: partial alpha for whiteish pixels on the rim, derived from distance to white
-    rim = nd.binary_dilation(fg, iterations=1) & ~fg
-    whiteness = np.clip((255 - mn) / (255 - thr + 1), 0, 1)
-    alpha[rim] = whiteness[rim] * 0.5
-    alpha = nd.gaussian_filter(alpha, 0.55)
-    alpha = np.clip(alpha * 1.15, 0, 1)
+    alpha = nd.gaussian_filter(alpha, 0.7)
+    alpha = np.clip((alpha - 0.15) / 0.7, 0, 1)
     alpha[nd.binary_erosion(fg, iterations=2)] = 1.0
     rgb = a.astype(np.float32)
     # un-matte the white fringe
