@@ -19,6 +19,8 @@ interface P {
   a0: number;
   fadeIn: number;
   flip: number; // coin flip speed (scale.x oscillation)
+  frames: Texture[] | null; // flipbook
+  fps: number;
   sx: number;
   sy: number;
 }
@@ -26,6 +28,7 @@ interface P {
 export interface SpawnOpts {
   vx: number; vy: number; g: number; life: number; scale: number; tint: number; add: boolean;
   vr: number; rot: number; alpha: number; grow: number; drag: number; fadeIn: number; flip: number; sy: number;
+  frames: Texture[]; fps: number;
 }
 
 export class FX extends Container {
@@ -52,7 +55,7 @@ export class FX extends Container {
     s.blendMode = o.add ? 'add' : 'normal';
     s.visible = true;
     this.addChild(s);
-    this.ps.push({ s, vx: o.vx ?? 0, vy: o.vy ?? 0, g: o.g ?? 0, life: 0, max: o.life ?? 1, vr: o.vr ?? 0, grow: o.grow ?? 0, drag: o.drag ?? 0, a0: s.alpha, fadeIn: o.fadeIn ?? 0, flip: o.flip ?? 0, sx: sc, sy: sc * (o.sy ?? 1) });
+    this.ps.push({ s, vx: o.vx ?? 0, vy: o.vy ?? 0, g: o.g ?? 0, life: 0, max: o.life ?? 1, vr: o.vr ?? 0, grow: o.grow ?? 0, drag: o.drag ?? 0, a0: s.alpha, fadeIn: o.fadeIn ?? 0, flip: o.flip ?? 0, sx: sc, sy: sc * (o.sy ?? 1), frames: o.frames ?? null, fps: o.fps ?? 18 });
     return s;
   }
 
@@ -75,6 +78,7 @@ export class FX extends Container {
         p.sy += p.grow * dt;
       }
       p.s.scale.set(p.flip ? p.sx * Math.cos(p.life * p.flip) : p.sx, p.sy);
+      if (p.frames) p.s.texture = p.frames[Math.floor(p.life * p.fps) % p.frames.length];
       const k = p.life / p.max;
       const fin = p.fadeIn ? Math.min(1, p.life / p.fadeIn) : 1;
       p.s.alpha = p.a0 * fin * (k < 0.65 ? 1 : Math.max(0, 1 - (k - 0.65) / 0.35));
@@ -95,7 +99,12 @@ export class FX extends Container {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
       const v = power * (0.3 + Math.random() * 0.7);
-      const spark = Math.random() < 0.45;
+      const r = Math.random();
+      const spark = r < 0.45;
+      if (r > 0.85) {
+        this.spawn(T.flare(), x, y, { vx: Math.cos(a) * v * 0.6, vy: Math.sin(a) * v * 0.6, g: 300, life: 0.5 + Math.random() * 0.4, scale: 0.2 + Math.random() * 0.25, add: true, vr: (Math.random() - 0.5) * 4, drag: 2.5 });
+        continue;
+      }
       this.spawn(spark ? T.spark() : T.dot(), x, y, {
         vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 520, life: 0.5 + Math.random() * 0.7,
         scale: spark ? 0.12 + Math.random() * 0.22 : 0.4 + Math.random() * 0.6, tint, add: true, vr: (Math.random() - 0.5) * 8, drag: 2.2,
@@ -116,7 +125,7 @@ export class FX extends Container {
       const a = Math.random() * Math.PI * 2;
       this.spawn(T.dust(), x + Math.cos(a) * 20, y + Math.sin(a) * 10, {
         vx: Math.cos(a) * spread, vy: Math.sin(a) * spread * 0.35 - 20, life: 1.1 + Math.random() * 0.8,
-        scale: 0.5 + Math.random() * 0.5, alpha: 0.75, grow: 0.5, drag: 1.6, rot: Math.random() * 6, vr: Math.random() - 0.5, tint,
+        scale: 0.35 + Math.random() * 0.35, alpha: 0.8, grow: 0.35, drag: 1.6, rot: Math.random() * 6, vr: Math.random() - 0.5, tint,
       });
     }
   }
@@ -127,7 +136,7 @@ export class FX extends Container {
       for (let k = 0; k < 3 && spawned < n; k++, spawned++) {
         this.spawn(T.coin(), Math.random() * w, -60, {
           vx: (Math.random() - 0.5) * 220, vy: 120 + Math.random() * 320, g: 900, life: (h + 120) / 700 + 0.6,
-          scale: 0.18 + Math.random() * 0.16, vr: (Math.random() - 0.5) * 4, flip: 6 + Math.random() * 8,
+          scale: 0.35 + Math.random() * 0.3, vr: (Math.random() - 0.5) * 2, frames: T.coinSpin(), fps: 14 + Math.random() * 12,
         });
       }
       if (spawned < n) gsap.delayedCall(dur / (n / 3), tick);
@@ -139,7 +148,7 @@ export class FX extends Container {
     for (let i = 0; i < n; i++) {
       this.spawn(T.coin(), x, y, {
         vx: (Math.random() - 0.5) * 700 * power, vy: (-520 - Math.random() * 620) * power, g: 1500, life: 1.5,
-        scale: 0.12 + Math.random() * 0.1, vr: (Math.random() - 0.5) * 8, flip: 8 + Math.random() * 8,
+        scale: 0.26 + Math.random() * 0.2, vr: (Math.random() - 0.5) * 3, frames: T.coinSpin(), fps: 16 + Math.random() * 12,
       });
     }
   }
@@ -184,3 +193,4 @@ export class FX extends Container {
     this.ps = [];
   }
 }
+

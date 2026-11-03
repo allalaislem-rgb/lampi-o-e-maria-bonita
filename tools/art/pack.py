@@ -16,13 +16,18 @@ os.makedirs(OUT, exist_ok=True)
 
 SYMBOLS = ['sym_lampiao', 'sym_maria', 'sym_wild', 'sym_wanted', 'sym_map', 'sym_emblem', 'sym_hat', 'sym_cartucheira',
            'sym_revolver', 'sym_sanfona', 'sym_rifles', 'sym_facao', 'sym_cactus', 'sym_cantil']
-OBJECTS = ['chest_closed', 'chest_open', 'chest_treasure', 'chest_empty', 'coin', 'coin_blank', 'mult_2', 'mult_3', 'mult_5',
-           'mult_10', 'token_mult', 'coins_pile', 'emblem_sun', 'medallion', 'gold_star', 'heart_gem', 'lantern', 'scarf', 'rider',
-           'plate_wide', 'plate_mid', 'plate_meter', 'ls_cell',
+# painted sheet cuts (tools/art/cut_sheet.py) + remaining code-drawn objects (tools/art/objects.mjs)
+OBJECTS = ['chest_closed', 'chest_open', 'chest_treasure', 'chest_empty', 'coin', 'coin_blank', 'token_mult', 'coins_pile',
+           'emblem_sun', 'medallion', 'gold_star', 'heart_gem', 'lantern', 'scarf', 'rider', 'ls_cell',
+           'badge_1', 'badge_2', 'badge_3', 'badge_5', 'badge_10', 'bar_wide', 'bar_small', 'panel_ribbon', 'banner_bonus', 'card_scatter', 'card_hideout', 'card_last',
+           'casing_1', 'casing_2', 'flower_0', 'flower_1', 'flower_2',
+           *[f'coinspin_{i}' for i in range(7)], *[f'flare_{i}' for i in range(5)], *[f'smoke_{i}' for i in range(4)],
+           'blast_0', 'blast_1', 'muzzle_0', 'muzzle_1', 'puff_0', 'puff_1',
            'fx_glow', 'fx_dot', 'fx_spark', 'fx_ring', 'fx_streak', 'fx_rays', 'fx_dust1', 'fx_dust2', 'fx_ember', 'fx_flare',
            'fx_shine', 'fx_smoke']
 STANDALONE = {  # name: (max width, quality)
-    'logo': (1400, 90), 'title_escape': (840, 90), 'title_hideout': (840, 90), 'title_last': (840, 90),
+    'logo': (1000, 92), 'title_escape': (440, 90), 'title_hideout': (440, 90), 'title_last': (440, 90),
+    'title_escape_lg': (900, 90), 'title_hideout_lg': (900, 90), 'title_last_lg': (900, 90),
     'win_big': (1080, 90), 'win_mega': (1080, 90), 'win_epic': (1080, 90),
     'frame_base': (1792, 90), 'frame_hideout': (1792, 90), 'frame_last': (1792, 90),
 }
@@ -94,10 +99,14 @@ def main():
         syms.append((n + '_blur', motion_blur(im)))
     pack('symbols', syms, max_w=4096)
     pack('objects', [(n, load(n)) for n in OBJECTS], max_w=2048)
+    chars = [f'lamp_{i}' for i in range(6)] + [f'maria_{i}' for i in range(6)] + [f'glowcard_{i}' for i in range(10)]
+    pack('chars', [(n, load(n)) for n in chars], max_w=2048)
     for n, (mw, q) in STANDALONE.items():
-        im = load(n)
+        im = load(n.replace('_lg', ''))
         if im.width > mw:
             im = im.resize((mw, round(im.height * mw / im.width)), Image.LANCZOS)
+        if im.width < mw and n.endswith('_lg'):
+            im = im.resize((mw, round(im.height * mw / im.width)), Image.LANCZOS).filter(ImageFilter.UnsharpMask(2, 50, 2))
         if n.endswith('_back'):
             im.convert('RGB').save(os.path.join(OUT, f'{n}.webp'), 'WEBP', quality=q, method=6)
         else:

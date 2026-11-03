@@ -44,7 +44,7 @@ export class Hud {
   }
 
   /** Animated count-up of the win meter. */
-  setWin(c: number, label = 'WIN', animate = true) {
+  setWin(c: number, label = 'GANHO', animate = true) {
     cancelAnimationFrame(this.winAnim);
     this.winLabel.textContent = label;
     this.winPanel.classList.toggle('lit', c > 0);

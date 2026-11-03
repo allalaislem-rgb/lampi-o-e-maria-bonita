@@ -11,8 +11,8 @@ import { money } from './format';
 import { sound } from '../audio/sound';
 import { CELL_W, CELL_H } from './reels';
 
-const MULT_TEX: Record<number, string> = { 2: 'mult_2', 3: 'mult_3', 5: 'mult_5', 10: 'mult_10' };
-const GHOSTS = ['coin', 'mult_2', 'emblem_sun', 'coin', 'mult_5', 'coin'];
+const MULT_TEX: Record<number, string> = { 2: 'badge_2', 3: 'badge_3', 5: 'badge_5', 10: 'badge_10' };
+const GHOSTS = ['coin_blank', 'badge_2', 'emblem_sun', 'coin_blank', 'badge_5', 'coinspin_3'];
 
 class Slot extends Container {
   bg: Sprite;
@@ -32,7 +32,7 @@ class Slot extends Container {
     this.glow.alpha = 0;
     this.glow.scale.set(1.9);
     this.glow.tint = 0xffb040;
-    this.ghost = new Sprite(tex('coin'));
+    this.ghost = new Sprite(tex('coin_blank'));
     this.ghost.anchor.set(0.5);
     this.ghost.alpha = 0;
     this.addChild(this.bg, this.glow, this.ghost, this.content);
@@ -76,7 +76,7 @@ export class LastStandView extends Container {
       label = goldText(money(cell.value * bet), cell.value >= 25 ? 32 : 28);
       label.y = 4;
     } else if (cell.kind === 'mult') {
-      icon = new Sprite(tex(MULT_TEX[cell.value] ?? 'mult_2'));
+      icon = new Sprite(tex(MULT_TEX[cell.value] ?? 'badge_2'));
     } else {
       icon = new Sprite(tex('emblem_sun'));
       label = goldText(money(cell.value * bet), 24);
@@ -87,7 +87,7 @@ export class LastStandView extends Container {
     s.content.addChild(icon);
     if (label) s.content.addChild(label);
     if (cell.kind === 'coin' && cell.value >= 10) {
-      const tag = plainText(cell.value >= 50 ? 'MEGA' : cell.value >= 25 ? 'MAJOR' : 'MINOR', 15, '#fff1b0');
+      const tag = plainText(cell.value >= 50 ? 'MEGA' : cell.value >= 25 ? 'MAIOR' : 'MENOR', 15, '#fff1b0');
       tag.y = -56;
       s.content.addChild(tag);
     }

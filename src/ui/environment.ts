@@ -48,6 +48,10 @@ class Scene extends Container {
     this.back = mk('back');
     this.mid = mk('mid');
     this.front = mk('front');
+    // push the code-drawn backdrop back so the painted symbols & UI read first
+    this.back.tint = 0xc8b4a4;
+    this.mid.tint = 0xb8a090;
+    this.front.tint = 0x9a8070;
     this.addChild(this.back);
     if (theme === 'base' || theme === 'escape') {
       this.glow = new Sprite(T.glow());

@@ -4,11 +4,11 @@
  * paylines, per-symbol win animations), expanding wilds, Wild reels and
  * symbol transformations. Purely presentational – renders engine outcomes.
  */
-import { Container, Graphics, Sprite, Ticker, FillGradient, type Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Ticker, FillGradient, NineSliceSprite, type Texture } from 'pixi.js';
 import gsap from 'gsap';
 import { REGULAR, SYMBOLS, PAYLINES, type SymbolId } from '../config/gameConfig';
 import type { Grid, LineWin, Pos } from '../engine/math';
-import { tex } from './assets';
+import { tex, seq } from './assets';
 import { T, goldText } from './gfx';
 import type { FX } from './fx';
 import { sound } from '../audio/sound';
@@ -31,6 +31,8 @@ export class SymbolView extends Container {
   shineMask: Graphics;
   id: SymbolId = 'CACT';
   blurred = false;
+  frameFx: NineSliceSprite;
+  private frameAnim: gsap.core.Tween | null = null;
   constructor() {
     super();
     this.glow = new Sprite(T.glow());
@@ -49,7 +51,12 @@ export class SymbolView extends Container {
     this.shine.rotation = 0.35;
     this.shine.scale.set(1.2, 1.1);
     this.shine.mask = this.shineMask;
-    this.addChild(this.glow, this.sprite, this.shineMask, this.shine);
+    // painted glowing card frame (art sheet) – animates in around winning symbols
+    this.frameFx = new NineSliceSprite({ texture: tex('glowcard_7'), leftWidth: 34, rightWidth: 34, topHeight: 34, bottomHeight: 34, width: CELL_W + 6, height: CELL_H + 6 });
+    this.frameFx.pivot.set((CELL_W + 6) / 2, (CELL_H + 6) / 2);
+    this.frameFx.blendMode = 'add';
+    this.frameFx.visible = false;
+    this.addChild(this.glow, this.sprite, this.shineMask, this.shine, this.frameFx);
   }
   set(id: SymbolId, blur = false) {
     this.id = id;
@@ -72,6 +79,27 @@ export class SymbolView extends Container {
     this.rotation = 0;
     this.glow.alpha = 0;
     this.shine.alpha = 0;
+    this.frameAnim?.kill();
+    this.frameAnim = null;
+    this.frameFx.visible = false;
+  }
+  /** Flipbook of the painted glowing card: ignite (frames 2→7), then flicker between the brightest frames. */
+  private igniteFrame() {
+    const frames = seq('glowcard_', 8);
+    const st = { f: 2 };
+    this.frameFx.visible = true;
+    this.frameFx.alpha = 1;
+    this.frameAnim?.kill();
+    this.frameAnim = gsap.to(st, {
+      f: 7,
+      duration: 0.35,
+      ease: 'power1.in',
+      onUpdate: () => (this.frameFx.texture = frames[Math.round(st.f)]),
+      onComplete: () => {
+        const fl = { f: 5 };
+        this.frameAnim = gsap.to(fl, { f: 7, duration: 0.25, yoyo: true, repeat: -1, ease: 'sine.inOut', onUpdate: () => (this.frameFx.texture = frames[Math.round(fl.f)]) });
+      },
+    });
   }
   /** Shine band sweeping across the symbol. */
   sweep(delay = 0, dur = 0.7) {
@@ -83,6 +111,7 @@ export class SymbolView extends Container {
     const base = { x: this.sprite.scale.x, y: this.sprite.scale.y };
     this.sprite.tint = 0xffffff;
     gsap.to(this.glow, { alpha: strong ? 0.95 : 0.7, duration: 0.25 });
+    this.igniteFrame();
     if (isPortrait(id)) {
       gsap.fromTo(this.sprite.scale, { x: base.x, y: base.y }, { x: base.x * 1.13, y: base.y * 1.13, duration: 0.32, yoyo: true, repeat: 3, ease: 'sine.inOut' });
       this.sweep(0.1);
@@ -433,7 +462,7 @@ export class ReelsView extends Container {
     // flare travelling along each line
     for (const li of lineIdxs.slice(0, 6)) {
       const pts = this.linePts(li);
-      const fl = new Sprite(T.flare());
+      const fl = new Sprite(T.lensFlare());
       fl.anchor.set(0.5);
       fl.blendMode = 'add';
       fl.scale.set(0.5);
@@ -537,7 +566,11 @@ export class ReelsView extends Container {
     shine.rotation = 0.3;
     shine.mask = msk;
     shine.alpha = 0.9;
-    c.addChild(panel, msk, rays, glow, lamp, shine);
+    const border = new NineSliceSprite({ texture: tex('glowcard_7'), leftWidth: 34, rightWidth: 34, topHeight: 34, bottomHeight: 34, width: CELL_W + 8, height: WIN_H + 8 });
+    border.pivot.set((CELL_W + 8) / 2, (WIN_H + 8) / 2);
+    border.blendMode = 'add';
+    c.addChild(panel, msk, rays, glow, lamp, shine, border);
+    gsap.to(border, { alpha: 0.6, duration: 0.5, yoyo: true, repeat: -1, ease: 'sine.inOut' });
     gsap.to(rays, { rotation: Math.PI * 2, duration: 9, repeat: -1, ease: 'none' });
     gsap.to(glow, { alpha: 0.95, duration: 0.7, yoyo: true, repeat: -1, ease: 'sine.inOut' });
     gsap.fromTo(shine, { y: -WIN_H }, { y: WIN_H, duration: 1.6, repeat: -1, repeatDelay: 1.2, ease: 'power2.inOut' });

@@ -49,7 +49,7 @@ async function boot() {
   // Title screen: a user gesture is required to start audio.
   const play = document.getElementById('btn-play')!;
   document.querySelector('#loader .bar')!.classList.add('hidden');
-  document.querySelector('#loader .hint')!.textContent = server.recovered ? 'Your unfinished feature is waiting' : 'The legend awaits';
+  document.querySelector('#loader .hint')!.textContent = server.recovered ? 'Seu bônus inacabado está esperando' : 'A lenda te espera';
   play.classList.remove('hidden');
   await new Promise<void>((res) =>
     play.addEventListener(
@@ -74,5 +74,5 @@ async function boot() {
 boot().catch((e) => {
   console.error(e);
   const hint = document.querySelector('#loader .hint');
-  if (hint) hint.textContent = 'Failed to load: ' + (e as Error).message;
+  if (hint) hint.textContent = 'Falha ao carregar: ' + (e as Error).message;
 });

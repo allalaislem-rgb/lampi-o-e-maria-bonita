@@ -1,36 +1,48 @@
 # Art & audio production pipeline
 
-All artwork, music and sound effects in this build are **original**. They were made from scratch
-for this game: authored in code, then rendered offline. Nothing comes from the earlier concept
-sprite sheets, which have been removed from the repository, and no third-party images or audio
-are used.
+## Art
 
-## Art pipeline
+The main artwork comes from the **client's painted asset sheet** `art/source/sheet_v5.webp`
+(1125×750, true alpha). It covers the 14 reel symbols (including the winking Lampião and his Wild),
+the character frame sequences, logo, bonus title cards, HUD buttons, panels, multiplier badges,
+spinning coins, flares, smoke, muzzle flashes, casings, flowers and the glowing card frames.
 
-```
-tools/art/*.mjs  ──(SVG)──▶  tools/art/render.mjs  ──(PNG/JPG, headless Chromium)──▶  art/render/
-                                                     tools/art/pack.py  ──▶  public/gfx/*.webp + *.json
-```
+`tools/art/cut_sheet.py` cuts it automatically:
 
-| Module | Contents |
+- removes the faint alpha haze around every sprite (alpha below about 24 is dropped);
+- keeps only the main shape, so slivers of neighbouring sprites are discarded;
+- fits each reel symbol into a uniform 480×432 canvas;
+- upscales the smaller items with Lanczos plus light sharpening;
+- writes the HUD images to `public/ui/*.webp`.
+
+Pieces the sheet does not contain are still **code-drawn** (`tools/art/*.mjs`, rasterised by
+`render.mjs` in headless Chromium):
+
+- the four parallax backgrounds;
+- the three reel frames;
+- the Hideout chests, Lampião's Emblem (Last Stand), medallion, heart and lantern;
+- the Portuguese win banners (GRANDE / MEGA GANHO, GANHO ÉPICO);
+- generic VFX (glow, ring, rays, shine);
+- the small SVG buttons (−, +, close, settings, music).
+
+Everything is packed into WebP texture atlases by `pack.py`:
+
+| Atlas | Contents |
 |---|---|
-| `lib.mjs` | Shared palette, material gradients (gold, leather, wood, steel, brass, paper), filters (bevel, specular, grain, drop shadow, glow), drawing helpers. All assets share one lighting rule: warm key light from the top-left, sunset rim light, warm-brown shadows. |
-| `characters.mjs` | Lampião and Maria Bonita busts, plus the cangaceiro half-moon hat with its Signo de Salomão star. |
-| `symbols.mjs` | The 14 reel symbols (200×180 cell, rendered at ×2.4). Portraits sit in gold cards. The Wild uses a distinct pose: raised revolver, radiant gold card, red WILD plate. |
-| `objects.mjs` | Chests (closed / open / treasure / empty), coins, multiplier coins, Lampião's Emblem, Maria's medallion, gold star, ruby heart, lantern, scarf, rider silhouette. |
-| `env.mjs` | Four environments × three parallax layers (back, mid, front) and three reel frames (base, hideout, last stand), plus info plates and the Hold & Respin cell. |
-| `ui.mjs` | Logo, feature title signs, BIG / MEGA / EPIC WIN banners, and vector HUD buttons written to `public/ui/*.svg` (crisp at any resolution). |
-| `fx.mjs` | Neutral VFX textures, tinted at runtime: glow, spark, ring, streak, rays, dust, smoke, ember, flare, shine. |
+| `symbols` | The 14 symbols, each with a pre-rendered motion-blur variant |
+| `objects` | Badges, coins, FX, props and panels |
+| `chars` | Lampião and Maria frame sequences and the glowing card frames |
 
-**Atlases.** `symbols.webp` holds every symbol plus a pre-rendered vertical **motion-blur** variant
-used while the reels spin. `objects.webp` holds objects, VFX and plates. Large images (backgrounds,
-frames, logo, titles, win banners) are standalone WebP files. Total graphics payload is about 2.3 MB.
-
-To regenerate the art you need Playwright with Chromium (`npm i -D playwright`, then `npx playwright install chromium`) and Python 3 with Pillow:
+To regenerate the art you need Playwright with Chromium and Python 3 with Pillow and SciPy:
 
 ```bash
 npm run art
 ```
+
+**Resolution note.** The sheet is 1125 px wide, so a reel symbol is about 200 px in the source and is
+upscaled about 2.2× for the 480 px symbol canvas. Large uses, such as the full-screen title cards in
+bonus intros, are visibly soft. A higher-resolution export of the same sheet (2×–4×) can be dropped in
+at the same coordinates scaled up; only the boxes in `cut_sheet.py` need multiplying.
 
 ## Audio pipeline
 
@@ -89,8 +101,5 @@ npm run audio
 
 ## Limitations
 
-This is code-authored, stylised illustration and offline synthesis. It is not painted 3D renders
-or a recorded live ensemble. The pipeline and runtime already support swapping in final assets:
-
-- **Art:** replace the PNG output of `render.mjs` (same names and sizes) and re-run `pack.py`.
-- **Audio:** drop recorded stems and SFX into `public/audio/` with the same names and update `manifest.json`.
+- **Art:** the backgrounds, reel frames and Hideout chests are still code-drawn vector art, so their style is flatter than the painted sheet. Painted versions can replace them file-for-file.
+- **Audio:** the music is synthesised offline, not a recorded ensemble. Recorded stems can be dropped into `public/audio/` with the same names and `manifest.json` loop points.

@@ -2,16 +2,16 @@
  * Feature info bar (above the play area): counters, escape multiplier meter,
  * Couple's Fortune tracker – carved wood & gold plates.
  */
-import { Container, Sprite, Graphics, Text } from 'pixi.js';
+import { Container, Sprite, Graphics, Text, NineSliceSprite } from 'pixi.js';
 import gsap from 'gsap';
 import { goldText, plainText, T, destroyDeep } from './gfx';
 import { tex } from './assets';
 
-function plateSprite(name: string, w: number, h: number) {
-  const s = new Sprite(tex(name));
-  s.anchor.set(0.5);
-  s.width = w;
-  s.height = h;
+/** Painted wood & gold panel (from the art sheet), nine-sliced so corners stay crisp at any size. */
+function plateSprite(_name: string, w: number, h: number) {
+  const t = tex('panel_ribbon');
+  const s = new NineSliceSprite({ texture: t, leftWidth: 70, rightWidth: 70, topHeight: 52, bottomHeight: 70, width: w * 1.04, height: h * 1.12 });
+  s.pivot.set((w * 1.04) / 2, (h * 1.12) / 2 - 4);
   return s;
 }
 
@@ -58,7 +58,7 @@ export class MultiplierMeter extends Container {
     this.glow.alpha = 0;
     this.glow.scale.set(6, 1.8);
     this.glow.tint = 0xffa030;
-    const lbl = plainText('ESCAPE MULTIPLIER', 17, '#f7c84a');
+    const lbl = plainText('MULTIPLICADOR DE FUGA', 17, '#f7c84a');
     lbl.position.set(30, -30);
     this.value = goldText('×1', 52);
     this.value.position.set(-160, 4);
@@ -98,7 +98,7 @@ export class CoupleTracker extends Container {
   constructor() {
     super();
     this.addChild(plateSprite('plate_wide', 300, 110));
-    const lbl = plainText("COUPLE'S FORTUNE", 15, '#f7c84a');
+    const lbl = plainText('FORTUNA DO CASAL', 15, '#f7c84a');
     lbl.y = -32;
     this.addChild(lbl);
     const mk = (name: string, x: number, h: number) => {
@@ -111,9 +111,9 @@ export class CoupleTracker extends Container {
       this.addChild(s);
       return s;
     };
-    this.lamp = mk('chest_treasure', -82, 56);
+    this.lamp = mk('lamp_0', -84, 70);
     this.heart = mk('heart_gem', 0, 44);
-    this.maria = mk('medallion', 82, 58);
+    this.maria = mk('maria_0', 84, 70);
   }
   set(t: boolean, m: boolean, both: boolean) {
     const light = (s: Sprite, on: boolean, key: 't' | 'm' | 'h') => {

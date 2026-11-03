@@ -41,20 +41,20 @@ export const SYMBOLS: Record<SymbolId, SymbolDef> = {
   // ---------------- premium ----------------                       DEV DEFAULT pays
   LAMP: { id: 'LAMP', name: 'Lampião', kind: 'premium', texture: 'sym_lampiao', pays: { 3: 60, 4: 250, 5: 1250 } },
   MARIA: { id: 'MARIA', name: 'Maria Bonita', kind: 'premium', texture: 'sym_maria', pays: { 3: 50, 4: 200, 5: 900 } },
-  HAT: { id: 'HAT', name: 'Cangaceiro Hat', kind: 'premium', texture: 'sym_hat', pays: { 3: 40, 4: 150, 5: 600 } },
+  HAT: { id: 'HAT', name: 'Chapéu de Couro', kind: 'premium', texture: 'sym_hat', pays: { 3: 40, 4: 150, 5: 600 } },
   CART: { id: 'CART', name: 'Cartucheira', kind: 'premium', texture: 'sym_cartucheira', pays: { 3: 30, 4: 120, 5: 450 } },
-  REV: { id: 'REV', name: 'Revolver', kind: 'premium', texture: 'sym_revolver', pays: { 3: 25, 4: 90, 5: 350 } },
+  REV: { id: 'REV', name: 'Revólver', kind: 'premium', texture: 'sym_revolver', pays: { 3: 25, 4: 90, 5: 350 } },
   SANF: { id: 'SANF', name: 'Sanfona', kind: 'premium', texture: 'sym_sanfona', pays: { 3: 20, 4: 75, 5: 300 } },
   // ---------------- low ----------------
-  RIFL: { id: 'RIFL', name: 'Crossed Rifles', kind: 'low', texture: 'sym_rifles', pays: { 3: 15, 4: 45, 5: 150 } },
+  RIFL: { id: 'RIFL', name: 'Rifles Cruzados', kind: 'low', texture: 'sym_rifles', pays: { 3: 15, 4: 45, 5: 150 } },
   FACA: { id: 'FACA', name: 'Facão', kind: 'low', texture: 'sym_facao', pays: { 3: 12, 4: 40, 5: 120 } },
   CACT: { id: 'CACT', name: 'Mandacaru', kind: 'low', texture: 'sym_cactus', pays: { 3: 10, 4: 30, 5: 90 } },
   CANT: { id: 'CANT', name: 'Cantil', kind: 'low', texture: 'sym_cantil', pays: { 3: 10, 4: 30, 5: 90 } },
   // ---------------- special ----------------
-  WILD: { id: 'WILD', name: 'Lampião Wild', kind: 'wild', texture: 'sym_wild', pays: { 3: 60, 4: 250, 5: 1250 } },
-  WANT: { id: 'WANT', name: 'Wanted Poster', kind: 'scatter', texture: 'sym_wanted', triggers: 'greatEscape' },
-  MAP: { id: 'MAP', name: 'Hideout Map', kind: 'scatter', texture: 'sym_map', triggers: 'hideout' },
-  EMBL: { id: 'EMBL', name: 'Cangaceiro Emblem', kind: 'scatter', texture: 'sym_emblem', triggers: 'lastStand' },
+  WILD: { id: 'WILD', name: 'Wild Lampião', kind: 'wild', texture: 'sym_wild', pays: { 3: 60, 4: 250, 5: 1250 } },
+  WANT: { id: 'WANT', name: 'Cartaz de Procurados', kind: 'scatter', texture: 'sym_wanted', triggers: 'greatEscape' },
+  MAP: { id: 'MAP', name: 'Mapa do Esconderijo', kind: 'scatter', texture: 'sym_map', triggers: 'hideout' },
+  EMBL: { id: 'EMBL', name: 'Emblema do Cangaço', kind: 'scatter', texture: 'sym_emblem', triggers: 'lastStand' },
 };
 
 export const PREMIUM: SymbolId[] = ['LAMP', 'MARIA', 'HAT', 'CART', 'REV', 'SANF'];
@@ -215,7 +215,7 @@ export const GAME_CONFIG = {
 export type GameConfig = typeof GAME_CONFIG;
 
 export const FEATURE_NAMES: Record<FeatureId, string> = {
-  greatEscape: 'The Great Escape',
-  hideout: 'The Hideout',
-  lastStand: 'The Last Stand',
+  greatEscape: 'A Grande Fuga',
+  hideout: 'O Esconderijo',
+  lastStand: 'O Último Combate',
 };

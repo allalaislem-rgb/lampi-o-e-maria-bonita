@@ -3,7 +3,7 @@
  */
 import { FillGradient, Text, TextStyle, type Texture } from 'pixi.js';
 import gsap from 'gsap';
-import { tex } from './assets';
+import { tex, seq } from './assets';
 
 export const T = {
   glow: (): Texture => tex('fx_glow'),
@@ -12,12 +12,15 @@ export const T = {
   ring: (): Texture => tex('fx_ring'),
   streak: (): Texture => tex('fx_streak'),
   rays: (): Texture => tex('fx_rays'),
-  dust: (): Texture => tex(Math.random() < 0.5 ? 'fx_dust1' : 'fx_dust2'),
+  dust: (): Texture => tex(`smoke_${Math.floor(Math.random() * 4)}`),
+  flare: (): Texture => tex(`flare_${Math.floor(Math.random() * 5)}`),
+  coinSpin: (): Texture[] => seq('coinspin_', 7),
+  flower: (): Texture => tex(`flower_${Math.floor(Math.random() * 3)}`),
   smoke: (): Texture => tex('fx_smoke'),
   ember: (): Texture => tex('fx_ember'),
-  flare: (): Texture => tex('fx_flare'),
+  lensFlare: (): Texture => tex('fx_flare'),
   shine: (): Texture => tex('fx_shine'),
-  coin: (): Texture => tex('coin'),
+  coin: (): Texture => tex('coinspin_0'),
 };
 
 export const FONT_TITLE = 'Rye, Georgia, serif';

@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "sim": "vite-node tools/simulate.ts",
-    "art": "node tools/art/render.mjs && python3 tools/art/pack.py",
+    "art": "node tools/art/render.mjs && python3 tools/art/cut_sheet.py && python3 tools/art/pack.py",
     "audio": "python3 tools/audio/compose.py"
   },
   "dependencies": {

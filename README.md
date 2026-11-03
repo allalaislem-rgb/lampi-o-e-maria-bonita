@@ -144,17 +144,14 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/MATH_ASSUMPTIONS.m
 
 ## Art & audio
 
-All graphics, music and sound effects are original. They are authored in code and rendered
-offline (see [`docs/ART_AND_AUDIO.md`](docs/ART_AND_AUDIO.md)); nothing from the earlier concept
-sheets remains.
-
-- **Art:** symbols, characters, environments (4 scenes × 3 parallax layers), reel frames, objects, VFX and the logo are drawn as layered vector illustration, rasterised in Chromium and packed into WebP texture atlases (about 2.3 MB). Spinning reels use pre-rendered motion-blur symbol textures.
-- **Score:** an original forró / baião soundtrack with layered intensity stems for each mode, seamless loops and dynamic crossfades.
-- **Sound effects:** 40 dedicated effects synchronised to the animations.
+- **Art:** the symbols, characters (including the winking Lampião), logo, bonus cards, HUD buttons, panels, badges and effects come from the client's painted asset sheet (`art/source/sheet_v5.webp`). It is cut and packed automatically; see [`docs/ART_AND_AUDIO.md`](docs/ART_AND_AUDIO.md). Backgrounds, reel frames and chests are code-drawn.
+- **Character animation:** Lampião's Arrival plays his painted draw-aim-fire sequence, with muzzle flash, smoke and casings. Lampião and Maria also appear in the bonus intros and the Couple's Fortune.
+- **Language:** the game interface is in Brazilian Portuguese, with `pt-BR` number formatting.
+- **Score:** an original forró / baião soundtrack with layered intensity stems and 40 sound effects.
 
 ## Remaining placeholders and limitations
 
-- **Art style:** the artwork is stylised vector illustration produced by code. It is not hand-painted 3D renders or Spine-rigged character animation. Commissioned art can replace it file-for-file through the existing pipeline.
+- **Art:** backgrounds, reel frames and chests are still code-drawn. The art sheet is fairly low resolution, so large on-screen uses (bonus intro titles, the logo on big screens) look soft. A 2–4× export of the same sheet would fix this.
 - **Audio:** the music and effects are synthesised (modelled instruments), not recorded live. Recorded stems can be dropped in with the same names and loop metadata.
 - **Mathematics:** every value is a development default (see `docs/MATH_ASSUMPTIONS.md`).
 - **Platform:** the wallet and RNG are simulated and development-only. Responsible-gaming tools, localisation and jurisdiction configuration are not implemented.

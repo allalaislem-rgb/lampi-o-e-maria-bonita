@@ -59,17 +59,17 @@ class Chest extends Container {
 export function prizeVisual(p: ChestPrize, bet: number): { texture: string; title: string; value: string; color: string } {
   switch (p.type) {
     case 'coins':
-      return { texture: 'coins_pile', title: 'GOLD', value: money(p.value * bet), color: '#ffe48a' };
+      return { texture: 'coins_pile', title: 'OURO', value: money(p.value * bet), color: '#ffe48a' };
     case 'multiplier':
-      return { texture: 'token_mult', title: 'MULTIPLIER', value: `+${p.value}×`, color: '#ffb0a0' };
+      return { texture: 'token_mult', title: 'MULTIPLICADOR', value: `+${p.value}×`, color: '#ffb0a0' };
     case 'extraPick':
-      return { texture: 'gold_star', title: 'EXTRA PICK', value: '+1', color: '#fff1b0' };
+      return { texture: 'gold_star', title: 'ESCOLHA EXTRA', value: '+1', color: '#fff1b0' };
     case 'treasure':
-      return { texture: 'chest_treasure', title: "LAMPIÃO'S TREASURE", value: money(p.value * bet), color: '#ffcf5a' };
+      return { texture: 'chest_treasure', title: 'TESOURO DE LAMPIÃO', value: money(p.value * bet), color: '#ffcf5a' };
     case 'medallion':
-      return { texture: 'medallion', title: "MARIA'S MEDALLION", value: '×2', color: '#ff9d8a' };
+      return { texture: 'medallion', title: 'MEDALHÃO DE MARIA', value: '×2', color: '#ff9d8a' };
     case 'empty':
-      return { texture: '', title: 'EMPTY', value: '', color: '#b9a38a' };
+      return { texture: '', title: 'VAZIO', value: '', color: '#b9a38a' };
   }
 }
 

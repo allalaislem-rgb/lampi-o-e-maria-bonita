@@ -21,7 +21,7 @@ const CSS = `
 @font-face{font-family:'Roboto Condensed';src:url(${font('RobotoCondensed.woff2')});font-weight:100 900}
 html,body{margin:0;padding:0;background:transparent}svg{display:block}`;
 
-const modules = ['symbols.mjs', 'objects.mjs', 'env.mjs', 'ui.mjs', 'fx.mjs'];
+const modules = ['objects.mjs', 'env.mjs', 'ui.mjs', 'fx.mjs'];
 const args = process.argv.slice(2);
 const filters = args.filter((a) => !a.startsWith('--'));
 const sheet = args.includes('--sheet');

@@ -5,9 +5,9 @@
  */
 import { Assets, Texture, type Spritesheet } from 'pixi.js';
 
-const ATLASES = ['symbols', 'objects'];
+const ATLASES = ['symbols', 'objects', 'chars'];
 export const STANDALONE = [
-  'logo', 'title_escape', 'title_hideout', 'title_last', 'win_big', 'win_mega', 'win_epic',
+  'logo', 'title_escape', 'title_hideout', 'title_last', 'title_escape_lg', 'title_hideout_lg', 'title_last_lg', 'win_big', 'win_mega', 'win_epic',
   'frame_base', 'frame_hideout', 'frame_last',
   ...['base', 'escape', 'hideout', 'laststand'].flatMap((s) => [`bg_${s}_back`, `bg_${s}_mid`, `bg_${s}_front`]),
 ];
@@ -48,4 +48,9 @@ export function atlasCss(name: string, boxW: number, boxH: number): string {
   const w = f.w * k;
   const h = f.h * k;
   return `display:inline-block;width:${w.toFixed(1)}px;height:${h.toFixed(1)}px;background:url(${f.sheet}) no-repeat;background-size:${(f.sw * k).toFixed(1)}px ${(f.sh * k).toFixed(1)}px;background-position:${(-f.x * k).toFixed(1)}px ${(-f.y * k).toFixed(1)}px`;
+}
+
+/** Numbered frame sequence, e.g. seq('lamp_', 8) → [lamp_0 … lamp_7]. */
+export function seq(prefix: string, n: number): Texture[] {
+  return Array.from({ length: n }, (_, i) => tex(`${prefix}${i}`));
 }

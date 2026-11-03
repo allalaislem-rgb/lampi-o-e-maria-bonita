@@ -10,13 +10,13 @@ import { ReelsView, WIN_W } from './reels';
 import { HideoutView } from './hideoutView';
 import { LastStandView } from './lastStandView';
 import { InfoBar } from './infoBar';
-import { tex } from './assets';
+import { tex, seq } from './assets';
 import { goldText, plainText, T, FONT_TITLE, destroyDeep } from './gfx';
 import { sound } from '../audio/sound';
 
 /** World design bounds (reel window is 0..1000 × 0..540, frame extends to -60..1060 × -110..600). */
 const WORLD = { x: -70, y: -300, w: 1140, h: 910 };
-const LOGO_W = 560;
+const LOGO_W = 440;
 
 export class Stage {
   app = new Application();
@@ -104,7 +104,7 @@ export class Stage {
       const s = Math.min(availW / WORLD.w, availH / WORLD.h);
       this.world.scale.set(s);
       this.world.position.set(w / 2 - (WORLD.x + WORLD.w / 2) * s, top + availH / 2 - (WORLD.y + WORLD.h / 2) * s);
-      this.logo.position.set(WIN_W / 2, -190);
+      this.logo.position.set(WIN_W / 2, -200);
       this.logoBase = LOGO_W / this.logo.texture.width;
       this.logo.scale.set(this.logoBase);
       this.info.position.set(WIN_W / 2, -180);
@@ -194,7 +194,7 @@ export class Stage {
         gsap.delayedCall(0.2 + i * 0.2, () => this.sfx.dustBurst(this.w * (0.2 + i * 0.2), this.h * 0.86, 6, 260));
       }
       await wait(700);
-      title = this.titleSlam('title_escape', this.h * 0.45, this.w * 0.7);
+      title = this.titleSlam('title_escape_lg', this.h * 0.45, this.w * 0.62);
       gsap.delayedCall(0.4, () => this.shake(14));
     } else if (kind === 'hideout') {
       sound.play('intro_hideout');
@@ -212,7 +212,8 @@ export class Stage {
       gsap.to(dark, { alpha: 0, duration: 1.5, delay: 0.3, ease: 'sine.inOut' });
       for (let i = 0; i < 40; i++) this.sfx.spawn(T.dot(), this.w / 2 + (Math.random() - 0.5) * unit, this.h / 2 + (Math.random() - 0.5) * unit * 0.6, { vy: -20 - Math.random() * 30, life: 2.2, scale: 0.4 + Math.random(), add: true, tint: 0xffd890, fadeIn: 0.6, alpha: 0.7 });
       await wait(650);
-      title = this.titleSlam('title_hideout', this.h * 0.45, this.w * 0.7);
+      title = this.titleSlam('title_hideout_lg', this.h * 0.45, this.w * 0.62);
+      this.characterCameo('maria_', 6, -1, 0.75);
     } else {
       sound.play('intro_last');
       this.env.lightning();
@@ -222,7 +223,8 @@ export class Stage {
       gsap.timeline().to(flash, { alpha: 0.9, duration: 0.05 }).to(flash, { alpha: 0, duration: 0.25 }).to(flash, { alpha: 0.6, duration: 0.05, delay: 0.2 }).to(flash, { alpha: 0, duration: 0.6 });
       for (let i = 0; i < 4; i++) gsap.delayedCall(0.3 + i * 0.15, () => this.sfx.embers(0, this.h, this.w, 25, 0xff6a1a));
       await wait(1100);
-      title = this.titleSlam('title_last', this.h * 0.45, this.w * 0.7);
+      title = this.titleSlam('title_last_lg', this.h * 0.45, this.w * 0.62);
+      this.characterCameo('lamp_', 6, 1, 0.75);
       gsap.delayedCall(0.38, () => {
         this.shake(22, 0.6);
         this.sfx.ring(this.w / 2, this.h * 0.45, unit / 120, 0xff8040);
@@ -256,6 +258,22 @@ export class Stage {
     destroyDeep(layer);
   }
 
+  /** Character slides in beside the title and plays its painted frame loop. */
+  private characterCameo(prefix: string, n: number, side: 1 | -1, size = 0.7) {
+    const frames = seq(prefix, n);
+    const s = new Sprite(frames[0]);
+    s.anchor.set(0.5, 1);
+    const k = (Math.min(this.w, this.h) * size) / frames[0].height;
+    s.scale.set(k * (side < 0 ? 1 : 1), k);
+    const tx = this.w / 2 + side * Math.min(this.w * 0.36, this.w / 2 - s.width * 0.3);
+    s.position.set(tx + side * this.w * 0.4, this.h * 0.98);
+    this.screen.addChild(s);
+    gsap.to(s, { x: tx, duration: 0.5, ease: 'back.out(1.2)' });
+    const st = { f: 0 };
+    gsap.to(st, { f: n - 1, duration: 1.4, delay: 0.3, ease: 'none', onUpdate: () => (s.texture = frames[Math.round(st.f)]) });
+    gsap.delayedCall(2.4, () => void gsap.to(s, { x: tx + side * this.w * 0.4, alpha: 0, duration: 0.4, ease: 'power2.in', onComplete: () => destroyDeep(s) }));
+  }
+
   // ----------------------------------------------------------- banners
   async eventBanner(kind: 'arrival' | 'raid') {
     const layer = new Container();
@@ -266,7 +284,7 @@ export class Stage {
     gsap.to(dim, { alpha: 1, duration: 0.25 });
     const unit = Math.min(this.w, this.h);
     const title = new Text({
-      text: kind === 'arrival' ? "LAMPIÃO'S ARRIVAL!" : "THE CANGACEIROS' RAID!",
+      text: kind === 'arrival' ? 'A CHEGADA DE LAMPIÃO!' : 'O ATAQUE DOS CANGACEIROS!',
       style: { fontFamily: FONT_TITLE, fontSize: Math.max(30, unit * 0.08), fill: kind === 'arrival' ? '#ffd760' : '#ff7a5a', stroke: { color: '#2a0d02', width: 9 }, dropShadow: { color: '#000', blur: 8, distance: 4, alpha: 0.8, angle: Math.PI / 2 }, align: 'center', wordWrap: true, wordWrapWidth: this.w * 0.9, padding: 10 },
       anchor: 0.5,
       resolution: 2,
@@ -277,28 +295,41 @@ export class Stage {
     gsap.from(title, { alpha: 0, duration: 0.25 });
 
     if (kind === 'arrival') {
-      sound.play('arrival');
+      sound.play('transform');
       const rays = new Sprite(T.rays());
       rays.anchor.set(0.5);
       rays.blendMode = 'add';
       rays.tint = 0xffc060;
-      rays.position.set(this.w / 2, this.h * 0.58);
+      rays.position.set(this.w / 2, this.h * 0.6);
       rays.scale.set((unit / 512) * 1.8);
       rays.alpha = 0.7;
-      const lamp = new Sprite(tex('sym_wild'));
-      lamp.anchor.set(0.5);
-      const k = (unit * 0.55) / lamp.texture.height;
+      layer.addChild(rays);
+      gsap.to(rays, { rotation: 1.4, duration: 2.6 });
+      // Lampião draws, aims and fires (painted frame sequence)
+      const frames = seq('lamp_', 6);
+      const lamp = new Sprite(frames[0]);
+      lamp.anchor.set(0.5, 0.55);
+      const k = (unit * 0.5) / frames[0].height;
       lamp.scale.set(k);
-      lamp.position.set(-lamp.width, this.h * 0.6);
-      layer.addChild(rays, lamp);
-      gsap.to(rays, { rotation: 1.4, duration: 2.4 });
-      gsap.delayedCall(0.05, () => this.shake(16));
-      await gsap.to(lamp, { x: this.w / 2, duration: 0.5, ease: 'back.out(1.3)' });
-      this.sfx.dustBurst(this.w / 2, this.h * 0.86, 14, 420);
-      this.sfx.sparkBurst(this.w / 2, this.h * 0.55, 46, 640);
-      this.sfx.ring(this.w / 2, this.h * 0.58, unit / 140);
-      await gsap.to(lamp.scale, { x: k * 1.08, y: k * 1.08, duration: 0.22, yoyo: true, repeat: 1 });
-      await wait(450);
+      lamp.position.set(-lamp.width, this.h * 0.62);
+      layer.addChild(lamp);
+      await gsap.to(lamp, { x: this.w / 2 - unit * 0.06, duration: 0.45, ease: 'back.out(1.3)' });
+      this.sfx.dustBurst(this.w / 2, this.h * 0.9, 12, 380);
+      const step = { f: 0 };
+      await gsap.to(step, { f: 5, duration: 0.75, ease: 'none', onUpdate: () => (lamp.texture = frames[Math.round(step.f)]) });
+      // shot!
+      const mx = lamp.x + lamp.width * 0.42;
+      const my = lamp.y - lamp.height * 0.02;
+      sound.play('arrival');
+      this.shake(18);
+      const flash = this.sfx.spawn(tex('muzzle_1'), mx, my, { life: 0.25, scale: k * 0.7, add: true });
+      void flash;
+      this.sfx.spawn(tex('blast_1'), mx + unit * 0.05, my, { life: 0.55, scale: k * 0.6, add: true, grow: 0.5 });
+      for (let i = 0; i < 4; i++) this.sfx.spawn(tex(`smoke_${i}`), mx + unit * 0.04, my, { vx: 80 + Math.random() * 120, vy: -40 - Math.random() * 60, life: 1.3, scale: k * 0.45, alpha: 0.7, grow: 0.3, drag: 1 });
+      for (let i = 0; i < 3; i++) this.sfx.spawn(tex(i % 2 ? 'casing_1' : 'casing_2'), lamp.x + lamp.width * 0.15, my, { vx: -120 - Math.random() * 160, vy: -380 - Math.random() * 120, g: 1400, life: 1.0, scale: k * 0.22, vr: 12 });
+      this.sfx.sparkBurst(mx, my, 30, 520);
+      gsap.to(lamp, { x: lamp.x - unit * 0.02, duration: 0.06, yoyo: true, repeat: 1 });
+      await wait(700);
       await gsap.to(lamp, { y: -lamp.height, alpha: 0, duration: 0.4, ease: 'power2.in' });
     } else {
       sound.play('raid');
@@ -362,7 +393,7 @@ export class Stage {
     const breathe = gsap.to(banner.scale, { x: bk * 1.04, y: bk * 1.04, duration: 0.5, yoyo: true, repeat: -1, delay: 0.6, ease: 'sine.inOut' });
     const amt = goldText(fmt(0), Math.max(44, unit * 0.11));
     amt.position.set(this.w / 2, this.h * 0.68);
-    const tap = plainText('TAP TO CONTINUE', Math.max(14, unit * 0.025), '#f7c84a');
+    const tap = plainText('TOQUE PARA CONTINUAR', Math.max(14, unit * 0.025), '#f7c84a');
     tap.position.set(this.w / 2, this.h * 0.84);
     tap.alpha = 0;
     layer.addChild(amt, tap);

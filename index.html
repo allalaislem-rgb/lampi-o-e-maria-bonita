@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -7,7 +7,7 @@
     <link rel="icon" href="./ui/favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="./fonts/Rye.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="./fonts/AlfaSlabOne.woff2" as="font" type="font/woff2" crossorigin />
-    <title>Lampião &amp; Maria Bonita – The Legend of the Sertão</title>
+    <title>Lampião &amp; Maria Bonita – A Lenda do Sertão</title>
   </head>
   <body>
     <div id="game"></div>
@@ -15,44 +15,45 @@
     <!-- Loading / title screen -->
     <div id="loader">
       <div class="loader-glow"></div>
-      <img class="loader-logo" src="./gfx/logo.webp" alt="Lampião & Maria Bonita – The Legend of the Sertão" />
+      <img class="loader-logo" src="./gfx/logo.webp" alt="Lampião & Maria Bonita – A Lenda do Sertão" />
       <div class="bar"><div class="fill"></div></div>
-      <p class="hint">Riding into the sertão…</p>
-      <button id="btn-play" class="gold-btn hidden">PLAY</button>
-      <p class="legal">ORBIT GAMES · DEVELOPMENT PROTOTYPE · SIMULATED CREDITS · NOT CERTIFIED</p>
+      <p class="hint">Cavalgando pelo sertão…</p>
+      <button id="btn-play" class="gold-btn hidden">JOGAR</button>
+      <p class="legal">ORBIT GAMES · PROTÓTIPO DE DESENVOLVIMENTO · CRÉDITOS SIMULADOS · NÃO CERTIFICADO</p>
     </div>
 
     <!-- Bonus Buy -->
     <div id="buy" class="hidden">
-      <div class="buy-head">BONUS BUY</div>
-      <button class="buy-btn" data-feature="greatEscape"><img src="./gfx/title_escape.webp" alt="The Great Escape" /><span class="buy-price" data-price="greatEscape">–</span></button>
-      <button class="buy-btn" data-feature="hideout"><img src="./gfx/title_hideout.webp" alt="The Hideout" /><span class="buy-price" data-price="hideout">–</span></button>
-      <button class="buy-btn" data-feature="lastStand"><img src="./gfx/title_last.webp" alt="The Last Stand" /><span class="buy-price" data-price="lastStand">–</span></button>
+      <div class="buy-head">COMPRAR BÔNUS</div>
+      <button class="buy-btn" data-feature="greatEscape"><img src="./gfx/title_escape.webp" alt="A Grande Fuga" /><span class="buy-price" data-price="greatEscape">–</span></button>
+      <button class="buy-btn" data-feature="hideout"><img src="./gfx/title_hideout.webp" alt="O Esconderijo" /><span class="buy-price" data-price="hideout">–</span></button>
+      <button class="buy-btn" data-feature="lastStand"><img src="./gfx/title_last.webp" alt="O Último Combate" /><span class="buy-price" data-price="lastStand">–</span></button>
     </div>
 
     <!-- HUD -->
     <div id="hud" class="hidden">
       <div class="hud-left">
-        <button class="icon-btn" id="btn-menu" title="Paytable &amp; rules" aria-label="Paytable and rules"><img src="./ui/btn_info.svg" alt="" /></button>
-        <button class="icon-btn" id="btn-sound" title="Sound settings" aria-label="Sound settings"><img src="./ui/btn_sound.svg" alt="" /></button>
-        <button class="icon-btn" id="btn-history" title="Round history" aria-label="Round history"><img src="./ui/btn_history.svg" alt="" /></button>
-        <button class="icon-btn" id="btn-dev" title="QA panel (development)" aria-label="QA panel"><img src="./ui/btn_settings.svg" alt="" /></button>
+        <button class="icon-btn" id="btn-menu" title="Tabela e regras" aria-label="Tabela e regras"><img src="./ui/btn_info.webp" alt="" /></button>
+        <button class="icon-btn" id="btn-sound" title="Som" aria-label="Som"><img src="./ui/btn_sound.webp" alt="" /></button>
+        <button class="icon-btn" id="btn-history" title="Histórico" aria-label="Histórico de rodadas"><img src="./ui/btn_menu.webp" alt="" /></button>
+        <button class="icon-btn" id="btn-full" title="Tela cheia" aria-label="Tela cheia"><img src="./ui/btn_full.webp" alt="" /></button>
+        <button class="icon-btn" id="btn-dev" title="Painel de QA (desenvolvimento)" aria-label="Painel de QA"><img src="./ui/btn_settings.svg" alt="" /></button>
       </div>
-      <div class="panel" id="panel-balance"><label>BALANCE</label><output id="balance">–</output></div>
+      <div class="panel" id="panel-balance"><label>SALDO</label><output id="balance">–</output></div>
       <div class="bet-group">
-        <button class="round-btn" id="bet-minus" aria-label="Decrease bet"><img src="./ui/btn_minus.svg" alt="" /></button>
-        <div class="panel" id="panel-bet"><label>BET</label><output id="bet">–</output></div>
-        <button class="round-btn" id="bet-plus" aria-label="Increase bet"><img src="./ui/btn_plus.svg" alt="" /></button>
+        <button class="round-btn" id="bet-minus" aria-label="Diminuir aposta"><img src="./ui/btn_minus.svg" alt="" /></button>
+        <div class="panel" id="panel-bet"><label>APOSTA</label><output id="bet">–</output></div>
+        <button class="round-btn" id="bet-plus" aria-label="Aumentar aposta"><img src="./ui/btn_plus.svg" alt="" /></button>
       </div>
-      <div class="panel" id="panel-win"><label id="win-label">WIN</label><output id="win">0.00</output></div>
+      <div class="panel" id="panel-win"><label id="win-label">GANHO</label><output id="win">0.00</output></div>
       <div class="hud-right">
-        <button class="icon-btn" id="btn-turbo" title="Turbo" aria-label="Turbo"><img src="./ui/btn_turbo.svg" alt="" /></button>
-        <button id="btn-spin" title="Spin (Space)" aria-label="Spin"><img src="./ui/btn_spin.svg" alt="" /><span id="auto-count"></span></button>
-        <button class="icon-btn" id="btn-auto" title="Autoplay" aria-label="Autoplay"><img src="./ui/btn_auto.svg" alt="" /></button>
+        <button class="icon-btn" id="btn-turbo" title="Turbo" aria-label="Turbo"><img src="./ui/btn_turbo.webp" alt="" /></button>
+        <button id="btn-spin" title="Girar (Espaço)" aria-label="Girar"><img src="./ui/btn_spin.webp" alt="" /><span id="auto-count"></span></button>
+        <button class="icon-btn" id="btn-auto" title="Jogo automático" aria-label="Jogo automático"><img src="./ui/btn_auto.webp" alt="" /></button>
       </div>
     </div>
 
-    <div id="demo-badge">DEMO · SIMULATED CREDITS · NOT CERTIFIED</div>
+    <div id="demo-badge">DEMO · CRÉDITOS SIMULADOS · NÃO CERTIFICADO</div>
     <div id="toast" role="status" aria-live="polite"></div>
     <div id="overlay"></div>
 
