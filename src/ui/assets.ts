@@ -7,9 +7,7 @@ import { Assets, Texture, type Spritesheet } from 'pixi.js';
 
 const ATLASES = ['symbols', 'objects', 'chars'];
 export const STANDALONE = [
-  'logo', 'title_escape', 'title_hideout', 'title_last', 'title_escape_lg', 'title_hideout_lg', 'title_last_lg', 'win_big', 'win_mega', 'win_epic',
-  'frame_base', 'frame_hideout', 'frame_last',
-  ...['base', 'escape', 'hideout', 'laststand'].flatMap((s) => [`bg_${s}_back`, `bg_${s}_mid`, `bg_${s}_front`]),
+  'logo', 'card_escape', 'card_hideout2', 'card_last2', 'win_big', 'win_mega', 'win_epic', 'bg_painted', 'frame_painted',
 ];
 
 const frames: Record<string, { x: number; y: number; w: number; h: number; sheet: string; sw: number; sh: number }> = {};
@@ -18,6 +16,7 @@ export async function loadAssets(onProgress: (p: number) => void) {
   const list = [
     ...ATLASES.map((n) => ({ alias: `atlas_${n}`, src: `./gfx/${n}.json` })),
     ...STANDALONE.map((n) => ({ alias: n, src: `./gfx/${n}.webp` })),
+    { alias: 'font_western', src: './fonts/western.fnt' },
   ];
   Assets.addBundle('game', list);
   const loaded = await Assets.loadBundle('game', onProgress);

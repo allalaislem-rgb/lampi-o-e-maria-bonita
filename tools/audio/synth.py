@@ -300,3 +300,23 @@ def master(x, peak_db=-1.0, drive=1.15):
     m = np.max(np.abs(x)) + 1e-9
     x = np.tanh(x / m * drive) / np.tanh(drive)
     return x * (10 ** (peak_db / 20))
+
+
+def pifano(note, dur, vel=0.8, breath=0.18):
+    """Banda-de-pífanos cane fife: near-sine tone, breathy noise, onset scoop, delayed vibrato."""
+    f = midi(note)
+    n = int(dur * SR)
+    tt = t(n)
+    scoop = 1 - 0.035 * np.exp(-tt / 0.03)
+    vib = 1 + 0.006 * np.sin(2 * np.pi * 5.6 * tt) * np.clip((tt - 0.12) / 0.2, 0, 1)
+    ph = 2 * np.pi * np.cumsum(f * scoop * vib) / SR
+    tone = np.sin(ph) + 0.18 * np.sin(2 * ph) + 0.06 * np.sin(3 * ph)
+    air = bp(noise(n), f * 0.8, min(f * 4, 12000)) * breath
+    x = (tone + air) * env_adsr(n, a=0.03, d=0.06, s=0.8, r=min(0.08, dur * 0.3))
+    chiff = hp(noise(n), 3000) * exp_decay(n, 0.015) * 0.25
+    return (x + chiff) * vel * 0.32
+
+
+def drone(note, dur, vel=0.5):
+    """Low sanfona bellows drone (dark reed pad)."""
+    return lp(accordion(note, dur, vel, bright=0.6), 900) * 1.4

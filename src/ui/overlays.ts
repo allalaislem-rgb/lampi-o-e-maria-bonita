@@ -13,7 +13,7 @@ const G = (n: string) => `./gfx/${n}.webp`;
 const SYM = (n: string, w: number, h: number) => `<i style="${atlasCss(n, w, h)}"></i>`;
 const CLOSE = `<button class="close-x" data-x aria-label="Close"><img src="./ui/btn_close.svg" alt=""/></button>`;
 
-const TITLE_IMG: Record<FeatureId, string> = { greatEscape: 'title_escape', hideout: 'title_hideout', lastStand: 'title_last' };
+const TITLE_IMG: Record<FeatureId, string> = { greatEscape: 'card_escape', hideout: 'card_hideout2', lastStand: 'card_last2' };
 
 let openCount = 0;
 export const isOverlayOpen = () => openCount > 0;
@@ -42,16 +42,7 @@ function onClick(el: HTMLElement, sel: string, fn: () => void) {
 }
 
 let toastTimer: number | undefined;
-const ENGINE_MSG: Record<string, string> = {
-  'Insufficient balance': 'Saldo insuficiente',
-  'Insufficient balance for this purchase': 'Saldo insuficiente para esta compra',
-  'Bet too high for Bonus Buy': 'Aposta alta demais para a compra de bônus',
-  'Bonus Buy is not available': 'Compra de bônus indisponível',
-  'Request already in flight': 'Aguarde…',
-  'Forced outcomes are disabled': 'Resultados forçados desativados',
-};
 export function toast(msg: string, ms = 2200) {
-  msg = ENGINE_MSG[msg] ?? (msg.startsWith('Action ') ? 'Ação indisponível agora' : msg);
   const t = document.getElementById('toast')!;
   t.textContent = msg;
   t.classList.add('show');
@@ -61,26 +52,26 @@ export function toast(msg: string, ms = 2200) {
 
 const INTRO_TEXT: Record<FeatureId, (n?: number) => string> = {
   greatEscape: (n) =>
-    `<div class="big-num">${n} GIROS GRÁTIS</div>
-     <p>Os Wilds de Lampião <b>se expandem</b> e cobrem o rolo inteiro. Cada giro vencedor com um Wild expandido aumenta o <b>Multiplicador de Fuga</b> em +1× (máx. ${GAME_CONFIG.greatEscape.multiplierCap}×) – ele nunca é zerado.</p>
-     <p>O <b>Ataque dos Cangaceiros</b> pode transformar rolos inteiros em Wild. 3+ Cartazes de Procurados concedem <b>+${GAME_CONFIG.greatEscape.retriggerSpins} giros</b>.</p>`,
+    `<div class="big-num">${n} FREE SPINS</div>
+     <p>Lampião Wilds <b>expand</b> to cover the whole reel. Every winning spin with an expanding Wild raises the <b>Escape Multiplier</b> by +1× (max ${GAME_CONFIG.greatEscape.multiplierCap}×) – it never resets.</p>
+     <p>The <b>Cangaceiro Raid</b> can turn whole reels Wild. 3+ Wanted Posters award <b>+${GAME_CONFIG.greatEscape.retriggerSpins} spins</b>.</p>`,
   hideout: () =>
-    `<div class="big-num">${GAME_CONFIG.hideout.initialPicks} ESCOLHAS</div>
-     <p>Escolha baús no esconderijo secreto dos cangaceiros. Encontre ouro, multiplicadores e escolhas extras.</p>
-     <p>Reúna o <b>Tesouro de Lampião</b> e o <b>Medalhão de Maria</b> para desbloquear a <b>Fortuna do Casal</b>. Prêmios já ganhos nunca são perdidos.</p>`,
+    `<div class="big-num">${GAME_CONFIG.hideout.initialPicks} PICKS</div>
+     <p>Choose chests in the cangaceiros' secret hideout. Find gold, multipliers and extra picks.</p>
+     <p>Collect <b>Lampião's Treasure</b> and <b>Maria's Medallion</b> to unlock the <b>Couple's Fortune</b>. Prizes already won can never be lost.</p>`,
   lastStand: () =>
-    `<div class="big-num">${GAME_CONFIG.lastStand.initialRespins} REGIROS</div>
-     <p>Os símbolos de ouro ficam presos. Cada novo símbolo de ouro reinicia os regiros para ${GAME_CONFIG.lastStand.initialRespins}.</p>
-     <p>Multiplicadores <b>2× 3× 5× 10×</b> se somam e multiplicam seu ouro. O <b>Emblema de Lampião</b> melhora multiplicadores ou adiciona ouro. Preencha as 15 posições para o <b>GRANDE TESOURO</b>.</p>`,
+    `<div class="big-num">${GAME_CONFIG.lastStand.initialRespins} RESPINS</div>
+     <p>Gold symbols lock in place. Every new gold symbol resets the respins to ${GAME_CONFIG.lastStand.initialRespins}.</p>
+     <p>Multipliers <b>2× 3× 5× 10×</b> add up and multiply your gold. <b>Lampião's Emblem</b> upgrades multipliers or adds gold. Fill all 15 positions for the <b>GRAND TREASURE</b>.</p>`,
 };
 
 export function showIntro(f: FeatureId, n?: number, resumed = false): Promise<void> {
   return new Promise((res) => {
     const el = open(`
       <img class="title-img" src="${G(TITLE_IMG[f])}" alt="${FEATURE_NAMES[f]}" />
-      ${resumed ? '<p class="sub">RETOMANDO SEU BÔNUS</p>' : ''}
+      ${resumed ? '<p class="sub">RESUMING YOUR FEATURE</p>' : ''}
       ${INTRO_TEXT[f](n)}
-      <div class="btn-row"><button class="gold-btn" data-go>${resumed ? 'CONTINUAR' : 'COMEÇAR'}</button></div>`);
+      <div class="btn-row"><button class="gold-btn" data-go>${resumed ? 'CONTINUE' : 'START'}</button></div>`);
     onClick(el, '[data-go]', () => {
       closeOverlay();
       res();
@@ -92,10 +83,10 @@ export function showOutro(f: FeatureId, win: number, extra = ''): Promise<void> 
   return new Promise((res) => {
     const el = open(`
       <img class="title-img" src="${G(TITLE_IMG[f])}" alt="" />
-      <p class="sub">BÔNUS CONCLUÍDO</p>
+      <p class="sub">FEATURE COMPLETE</p>
       <div class="big-num" id="outro-num">0.00</div>
       ${extra}
-      <div class="btn-row"><button class="gold-btn" data-go>COLETAR</button></div>`);
+      <div class="btn-row"><button class="gold-btn" data-go>COLLECT</button></div>`);
     const num = el.querySelector('#outro-num')!;
     const t0 = performance.now();
     const dur = win > 0 ? 1600 : 1;
@@ -116,8 +107,8 @@ export function showOutro(f: FeatureId, win: number, extra = ''): Promise<void> 
 export function showChoice(options: FeatureId[], resumed = false): Promise<FeatureId> {
   return new Promise((res) => {
     const el = open(`
-      <h2>ESCOLHA SUA LENDA</h2>
-      <p>${resumed ? 'Retomando: ' : ''}Mais de um bônus foi ativado. Escolha um – os outros não são acumulados.</p>
+      <h2>CHOOSE YOUR LEGEND</h2>
+      <p>${resumed ? 'Resuming: ' : ''}More than one bonus was triggered. Choose one feature – the others are not carried over.</p>
       <div class="choice-grid">${options
         .map((f) => `<button class="choice-card" data-f="${f}"><img src="${G(TITLE_IMG[f])}" alt="" /><span>${FEATURE_NAMES[f]}</span></button>`)
         .join('')}</div>`);
@@ -136,15 +127,15 @@ export function confirmBuy(f: FeatureId, price: number, balance: number, multipl
   return new Promise((res) => {
     const ok = price <= balance;
     const el = open(`
-      <img class="title-img" src="${G(TITLE_IMG[f])}" alt="" style="width:min(300px,60vw)" />
-      <h2>COMPRAR ${FEATURE_NAMES[f].toUpperCase()}?</h2>
+      <img class="title-img" src="${G(TITLE_IMG[f])}" alt="" style="height:min(260px,34vh)" />
+      <h2>BUY ${FEATURE_NAMES[f].toUpperCase()}?</h2>
       <div class="big-num">${money(price)}</div>
-      <p class="sub">${multiple}× A APOSTA ATUAL</p>
-      <p class="note">Saldo: ${money(balance)} · O preço é debitado imediatamente. A compra de bônus não garante ganho. Os preços são valores ilustrativos de desenvolvimento.</p>
-      ${ok ? '' : '<p style="color:#ff8a7a"><b>Saldo insuficiente para esta compra.</b></p>'}
+      <p class="sub">${multiple}× CURRENT BET</p>
+      <p class="note">Balance: ${money(balance)} · The price is deducted immediately. Bonus Buy does not guarantee a win. Prices are illustrative development values.</p>
+      ${ok ? '' : '<p style="color:#ff8a7a"><b>Insufficient balance for this purchase.</b></p>'}
       <div class="btn-row">
-        <button class="gold-btn secondary" data-no>CANCELAR</button>
-        ${ok ? '<button class="gold-btn" data-yes>CONFIRMAR</button>' : ''}
+        <button class="gold-btn secondary" data-no>CANCEL</button>
+        ${ok ? '<button class="gold-btn" data-yes>CONFIRM</button>' : ''}
       </div>`);
     onClick(el, '[data-no]', () => {
       closeOverlay();
@@ -160,10 +151,10 @@ export function confirmBuy(f: FeatureId, price: number, balance: number, multipl
 export function showAutoplay(options: number[]): Promise<number | null> {
   return new Promise((res) => {
     const el = open(`
-      <h2>JOGO AUTOMÁTICO</h2>
-      <p>Número de giros. O jogo automático para quando um bônus é ativado, com saldo insuficiente ou ao tocar em Girar.</p>
+      <h2>AUTOPLAY</h2>
+      <p>Number of spins. Autoplay stops when a feature triggers, on insufficient balance, or when you press Spin.</p>
       <div class="auto-grid">${options.map((n) => `<button class="gold-btn" data-n="${n}">${n}</button>`).join('')}</div>
-      <div class="btn-row"><button class="gold-btn secondary" data-no>CANCELAR</button></div>`);
+      <div class="btn-row"><button class="gold-btn secondary" data-no>CANCEL</button></div>`);
     el.querySelectorAll<HTMLElement>('[data-n]').forEach((b) =>
       b.addEventListener('click', () => {
         sound.play('click');
@@ -192,32 +183,32 @@ export function showPaytable(bet: number) {
   const c = GAME_CONFIG;
   const el = open(
     `${CLOSE}
-    <h2>TABELA DE PAGAMENTOS &amp; REGRAS</h2>
-    <div class="tabs">${[['pt-sym', 'Símbolos'], ['pt-esc', 'Grande Fuga'], ['pt-hid', 'Esconderijo'], ['pt-last', 'Último Combate'], ['pt-ev', 'Eventos'], ['pt-buy', 'Compra de Bônus'], ['pt-lines', 'Linhas']].map(([id, l]) => `<button class="tab" data-jump="${id}">${l}</button>`).join('')}</div>
-    <p style="text-align:center">Valores para a aposta atual de <b>${money(bet)}</b> (${PAYLINES.length} linhas fixas, aposta por linha ${money(lineBet)}).</p>
-    <h3 id="pt-sym">Símbolos premium</h3><div class="pay-grid">${(['LAMP', 'MARIA', 'HAT', 'CART', 'REV', 'SANF'] as SymbolId[]).map(sym).join('')}</div>
-    <h3>Símbolos de pagamento baixo</h3><div class="pay-grid">${(['RIFL', 'FACA', 'CACT', 'CANT'] as SymbolId[]).map(sym).join('')}</div>
-    <h3>Símbolos especiais</h3>
-    <div class="special-row"><span class="sym">${SYM('sym_wild', 104, 94)}</span><div><b>WILD LAMPIÃO</b> – aparece nos rolos 2–5 e substitui todos os símbolos pagantes comuns (não substitui scatters). 5 Wilds pagam ${money(SYMBOLS.WILD.pays![5] * lineBet)}.</div></div>
-    <div class="special-row"><span class="sym">${SYM('sym_wanted', 104, 94)}</span><div><b>CARTAZ DE PROCURADOS</b> – 3 / 4 / 5 em qualquer posição ativam <b>A GRANDE FUGA</b> com ${c.greatEscape.spinsAwarded[3]} / ${c.greatEscape.spinsAwarded[4]} / ${c.greatEscape.spinsAwarded[5]} giros grátis.</div></div>
-    <div class="special-row"><span class="sym">${SYM('sym_map', 104, 94)}</span><div><b>MAPA DO ESCONDERIJO</b> – 3 ou mais em qualquer posição ativam o bônus de escolha <b>O ESCONDERIJO</b>.</div></div>
-    <div class="special-row"><span class="sym">${SYM('sym_emblem', 104, 94)}</span><div><b>EMBLEMA DO CANGAÇO</b> – 3 ou mais em qualquer posição ativam o Hold &amp; Respin <b>O ÚLTIMO COMBATE</b>. Os emblemas sorteados viram os primeiros símbolos de ouro presos.</div></div>
-    <h3 id="pt-esc">A Grande Fuga – Giros Grátis</h3>
-    <p>Os Wilds de Lampião se expandem e cobrem o rolo. Cada giro em que um Wild expandido participa de um ganho aumenta o Multiplicador de Fuga em +${c.greatEscape.multiplierStep}× (início ${c.greatEscape.multiplierStart}×, máx. ${c.greatEscape.multiplierCap}×); ele vale para ganhos com Wild expandido e permanece durante todo o bônus. O Ataque dos Cangaceiros pode transformar 1–2 rolos em Wild sem gastar giro. 3+ Cartazes concedem +${c.greatEscape.retriggerSpins} giros (máx. ${c.greatEscape.maxTotalSpins} giros no total).</p>
-    <h3 id="pt-hid">O Esconderijo – Bônus de Escolha</h3>
-    <p>12 baús, ${c.hideout.initialPicks} escolhas. Os baús podem esconder moedas de ouro, multiplicadores (+1× / +2×), escolhas extras, o Tesouro de Lampião (${c.hideout.prizes.find((p) => p.type === 'treasure')?.value}× a aposta), o Medalhão de Maria (dobra o multiplicador) ou nada. Reunir o Tesouro e o Medalhão desbloqueia a Fortuna do Casal (+${c.hideout.couplesFortune}× a aposta). Prêmio do bônus = ouro coletado × multiplicador. Prêmios coletados nunca são perdidos.</p>
-    <h3 id="pt-last">O Último Combate – Hold &amp; Respin</h3>
-    <p>Começa com ${c.lastStand.initialRespins} regiros numa grade 5×3 própria. Os símbolos de ouro ficam presos; cada novo símbolo reinicia os regiros para ${c.lastStand.initialRespins}; um regiro sem símbolo novo consome um regiro. Os multiplicadores (2×, 3×, 5×, 10×) se somam e multiplicam o ouro total. O Emblema de Lampião sobe cada multiplicador preso um nível ou adiciona posições de ouro. Preencher as 15 posições concede o Grande Tesouro (${c.lastStand.grandTreasure}× a aposta). Termina quando os regiros acabam, a grade fica cheia ou o ganho máximo é atingido.</p>
-    <h3 id="pt-ev">Eventos aleatórios</h3>
-    <p><b>A Chegada de Lampião</b> – um rolo (raramente dois) vira Wild por inteiro antes da avaliação dos ganhos. <b>O Ataque dos Cangaceiros</b> – símbolos de pagamento baixo se transformam no mesmo símbolo premium: um grupo igual, um rolo inteiro ou, raramente, vários rolos.</p>
-    <h3 id="pt-buy">Compra de Bônus</h3>
-    <p>A Grande Fuga ${c.bonusBuy.prices.greatEscape}× a aposta · O Esconderijo ${c.bonusBuy.prices.hideout}× a aposta · O Último Combate ${c.bonusBuy.prices.lastStand}× a aposta. Disponível até uma aposta total de ${money(c.bonusBuy.maxBetForBuy)}. O preço é debitado na confirmação e o bônus começa imediatamente.</p>
-    <h3>Ativações simultâneas</h3><p>Se mais de um bônus for ativado no mesmo giro, você escolhe um; os outros não são acumulados.</p>
-    <h3 id="pt-lines">Linhas de pagamento</h3><div class="lines-grid">${lines}</div>
-    <h3>Geral</h3>
-    <p>Os ganhos pagam da esquerda para a direita em rolos adjacentes a partir do rolo 1. Apenas o maior ganho por linha é pago. Os ganhos de linha são multiplicados pela aposta por linha. Ganho máximo de ${c.maxWinMultiplier.toLocaleString('pt-BR')}× a aposta total por rodada (todas as formas de entrada); ao atingi-lo, a rodada termina. Mau funcionamento anula todos os pagamentos e jogadas.</p>
-    <div class="disclaimer"><b>PROTÓTIPO DE DESENVOLVIMENTO.</b> Apenas créditos simulados, RNG de desenvolvimento, não certificado. RTP alvo de ${(c.rtpTarget * 100).toFixed(2).replace('.', ',')}% e todos os valores desta tabela são <b>padrões de desenvolvimento não validados</b>, pendentes do modelo matemático certificado.</div>
-    <div class="btn-row"><button class="gold-btn" data-x>FECHAR</button></div>`,
+    <h2>PAYTABLE &amp; RULES</h2>
+    <div class="tabs">${[['pt-sym', 'Symbols'], ['pt-esc', 'Great Escape'], ['pt-hid', 'Hideout'], ['pt-last', 'Last Stand'], ['pt-ev', 'Events'], ['pt-buy', 'Bonus Buy'], ['pt-lines', 'Paylines']].map(([id, l]) => `<button class="tab" data-jump="${id}">${l}</button>`).join('')}</div>
+    <p style="text-align:center">Values shown for the current bet of <b>${money(bet)}</b> (${PAYLINES.length} fixed lines, line bet ${money(lineBet)}).</p>
+    <h3 id="pt-sym">Premium symbols</h3><div class="pay-grid">${(['LAMP', 'MARIA', 'HAT', 'CART', 'REV', 'SANF'] as SymbolId[]).map(sym).join('')}</div>
+    <h3>Low-paying symbols</h3><div class="pay-grid">${(['RIFL', 'FACA', 'CACT', 'CANT'] as SymbolId[]).map(sym).join('')}</div>
+    <h3>Special symbols</h3>
+    <div class="special-row"><span class="sym">${SYM('sym_wild', 104, 94)}</span><div><b>LAMPIÃO WILD</b> – appears on reels 2–5 and substitutes for all regular paying symbols (not for scatters). 5 Wilds pay ${money(SYMBOLS.WILD.pays![5] * lineBet)}.</div></div>
+    <div class="special-row"><span class="sym">${SYM('sym_wanted', 104, 94)}</span><div><b>WANTED POSTER</b> – 3 / 4 / 5 anywhere trigger <b>THE GREAT ESCAPE</b> with ${c.greatEscape.spinsAwarded[3]} / ${c.greatEscape.spinsAwarded[4]} / ${c.greatEscape.spinsAwarded[5]} free spins.</div></div>
+    <div class="special-row"><span class="sym">${SYM('sym_map', 104, 94)}</span><div><b>HIDEOUT MAP</b> – 3 or more anywhere trigger <b>THE HIDEOUT</b> pick bonus.</div></div>
+    <div class="special-row"><span class="sym">${SYM('sym_emblem', 104, 94)}</span><div><b>CANGACEIRO EMBLEM</b> – 3 or more anywhere trigger <b>THE LAST STAND</b> Hold &amp; Respin. Landed emblems become the first locked gold symbols.</div></div>
+    <h3 id="pt-esc">The Great Escape – Free Spins</h3>
+    <p>Lampião Wilds expand to cover their reel. Every spin where an expanding Wild contributes to a win increases the Escape Multiplier by +${c.greatEscape.multiplierStep}× (start ${c.greatEscape.multiplierStart}×, max ${c.greatEscape.multiplierCap}×); it applies to wins that include an expanding Wild and persists for the whole feature. The Cangaceiro Raid can randomly turn 1–2 reels Wild without using a spin. 3+ Wanted Posters award +${c.greatEscape.retriggerSpins} spins (max ${c.greatEscape.maxTotalSpins} spins total).</p>
+    <h3 id="pt-hid">The Hideout – Pick Bonus</h3>
+    <p>12 chests, ${c.hideout.initialPicks} picks. Chests may hide gold coins, multipliers (+1× / +2×), extra picks, Lampião's Treasure (${c.hideout.prizes.find((p) => p.type === 'treasure')?.value}× bet), Maria's Medallion (doubles the multiplier) or nothing. Collecting both the Treasure and the Medallion unlocks the Couple's Fortune (+${c.hideout.couplesFortune}× bet). Feature award = collected gold × multiplier. Collected prizes are never lost.</p>
+    <h3 id="pt-last">The Last Stand – Hold &amp; Respin</h3>
+    <p>Starts with ${c.lastStand.initialRespins} respins on a dedicated 5×3 grid. Gold symbols lock; each new symbol resets the respins to ${c.lastStand.initialRespins}; a respin with no new symbol uses one respin. Multiplier symbols (2×, 3×, 5×, 10×) add together and multiply the total gold. Lampião's Emblem upgrades every locked multiplier one tier or awards extra gold positions. Filling all 15 positions awards the Grand Treasure (${c.lastStand.grandTreasure}× bet). Ends when respins run out, the grid is full, or the maximum win is reached.</p>
+    <h3 id="pt-ev">Random events</h3>
+    <p><b>Lampião's Arrival</b> – one reel (rarely two) turns completely Wild before wins are evaluated. <b>The Cangaceiros' Raid</b> – low-paying symbols transform into the same premium symbol: a matching group, a whole reel, or rarely several reels.</p>
+    <h3 id="pt-buy">Bonus Buy</h3>
+    <p>The Great Escape ${c.bonusBuy.prices.greatEscape}× bet · The Hideout ${c.bonusBuy.prices.hideout}× bet · The Last Stand ${c.bonusBuy.prices.lastStand}× bet. Available up to a total bet of ${money(c.bonusBuy.maxBetForBuy)}. The price is deducted on confirmation and the feature starts immediately.</p>
+    <h3>Simultaneous triggers</h3><p>If more than one bonus triggers on the same spin, you choose one; the others are not carried over.</p>
+    <h3 id="pt-lines">Paylines</h3><div class="lines-grid">${lines}</div>
+    <h3>General</h3>
+    <p>Wins pay left to right on adjacent reels starting from reel 1. Only the highest win per line is paid. Line wins are multiplied by the line bet. Maximum win ${c.maxWinMultiplier.toLocaleString()}× total bet per round (all entry routes); reaching it ends the round. Malfunction voids all pays and plays.</p>
+    <div class="disclaimer"><b>DEVELOPMENT PROTOTYPE.</b> Simulated credits only, development RNG, not certified. RTP target ${(c.rtpTarget * 100).toFixed(2)}% and all values in this paytable are <b>unvalidated development defaults</b> pending the certified mathematical model.</div>
+    <div class="btn-row"><button class="gold-btn" data-x>CLOSE</button></div>`,
     'wide',
   );
   onClick(el, '[data-x]', closeOverlay);
@@ -235,14 +226,14 @@ export function showHistory(rounds: RoundRecord[]) {
     .reverse()
     .map(
       (r) =>
-        `<tr><td>${r.roundId.slice(-8)}</td><td>${r.type === 'buy' ? 'COMPRA ' : ''}${r.feature ? FEATURE_NAMES[r.feature] : 'Base'}</td><td>${money(r.bet)}</td><td>${money(r.cost)}</td><td>${money(r.totalWin)}</td><td>${r.balanceAfter !== null ? money(r.balanceAfter) : '–'}</td><td>${r.status === 'completed' ? 'concluída' : 'pendente'}</td></tr>`,
+        `<tr><td>${r.roundId.slice(-8)}</td><td>${r.type === 'buy' ? 'BUY ' : ''}${r.feature ? FEATURE_NAMES[r.feature] : 'Base'}</td><td>${money(r.bet)}</td><td>${money(r.cost)}</td><td>${money(r.totalWin)}</td><td>${r.balanceAfter !== null ? money(r.balanceAfter) : '–'}</td><td>${r.status}</td></tr>`,
     )
     .join('');
   const el = open(
-    `${CLOSE}<h2>HISTÓRICO DE RODADAS</h2>
-     <table class="ledger"><tr><th>Rodada</th><th>Tipo</th><th>Aposta</th><th>Custo</th><th>Ganho</th><th>Saldo</th><th>Estado</th></tr>${rows || '<tr><td colspan="7">Nenhuma rodada ainda</td></tr>'}</table>
-     <p class="note">Registro da carteira simulada (desenvolvimento). Cada rodada registra aposta/compra, resultado, pagamento e saldo.</p>
-     <div class="btn-row"><button class="gold-btn" data-x>FECHAR</button></div>`,
+    `${CLOSE}<h2>ROUND HISTORY</h2>
+     <table class="ledger"><tr><th>Round</th><th>Type</th><th>Bet</th><th>Cost</th><th>Win</th><th>Balance</th><th>Status</th></tr>${rows || '<tr><td colspan="7">No rounds yet</td></tr>'}</table>
+     <p class="note">Simulated wallet ledger (development). Every round records stake/purchase, outcome, payout and balance.</p>
+     <div class="btn-row"><button class="gold-btn" data-x>CLOSE</button></div>`,
     'wide',
   );
   onClick(el, '[data-x]', closeOverlay);
@@ -255,22 +246,22 @@ export interface DevActions {
 }
 export function showDev(a: DevActions) {
   const opts: [string, string][] = [
-    ['greatEscape', 'Próximo giro: 3 Cartazes'],
-    ['greatEscape5', 'Próximo giro: 5 Cartazes'],
-    ['hideout', 'Próximo giro: 3 Mapas'],
-    ['lastStand', 'Próximo giro: 3 Emblemas'],
-    ['multi', 'Próximo giro: Mapas + Emblemas (escolha)'],
-    ['arrival', 'Próximo giro: Chegada de Lampião'],
-    ['raid', 'Próximo giro: Ataque dos Cangaceiros'],
-    ['fsRaid', 'Próximo giro grátis: Ataque'],
+    ['greatEscape', 'Next spin: 3 Wanted Posters'],
+    ['greatEscape5', 'Next spin: 5 Wanted Posters'],
+    ['hideout', 'Next spin: 3 Hideout Maps'],
+    ['lastStand', 'Next spin: 3 Emblems'],
+    ['multi', 'Next spin: Maps + Emblems (choice)'],
+    ['arrival', "Next spin: Lampião's Arrival"],
+    ['raid', "Next spin: Cangaceiros' Raid"],
+    ['fsRaid', 'Next free spin: Cangaceiro Raid'],
   ];
   const el = open(
-    `${CLOSE}<h2>PAINEL DE QA / DESENVOLVIMENTO</h2>
-     <p class="note">Resultados forçados são uma ferramenta apenas de desenvolvimento (GAME_CONFIG.dev.allowForcedOutcomes). Eles são pedidos ao motor – o motor ainda gera e liquida a rodada.</p>
+    `${CLOSE}<h2>QA / DEVELOPER PANEL</h2>
+     <p class="note">Forced outcomes are a development-only tool (GAME_CONFIG.dev.allowForcedOutcomes). They are requested from the engine – the engine still generates and settles the round.</p>
      <div class="dev-grid">${opts.map(([k, l]) => `<button class="gold-btn" data-k="${k}">${l}</button>`).join('')}
-       <button class="gold-btn secondary" data-reset>Reiniciar carteira simulada</button></div>
+       <button class="gold-btn secondary" data-reset>Reset simulated wallet</button></div>
      <p class="note">RNG: ${a.rngLabel}</p>
-     <div class="btn-row"><button class="gold-btn" data-x>FECHAR</button></div>`,
+     <div class="btn-row"><button class="gold-btn" data-x>CLOSE</button></div>`,
   );
   el.querySelectorAll<HTMLElement>('[data-k]').forEach((b) =>
     b.addEventListener('click', () => {
@@ -299,11 +290,11 @@ export function showMessage(title: string, html: string, btn = 'OK'): Promise<vo
 /** Sound settings: separate Music / SFX volume + mute. */
 export function showSoundSettings(onChange: () => void) {
   const pct = (v: number) => Math.round(v * 100);
-  const el = open(`${CLOSE}<h2>SOM</h2>
-    <div class="setting"><img src="./ui/btn_music.svg" alt=""/><div><label for="vol-music">MÚSICA</label><input id="vol-music" type="range" min="0" max="100" value="${pct(sound.musicVolume)}"/></div><output id="o-music">${pct(sound.musicVolume)}%</output></div>
-    <div class="setting"><img src="./ui/btn_sound.webp" alt=""/><div><label for="vol-sfx">EFEITOS SONOROS</label><input id="vol-sfx" type="range" min="0" max="100" value="${pct(sound.sfxVolume)}"/></div><output id="o-sfx">${pct(sound.sfxVolume)}%</output></div>
-    <label class="switch"><input id="mute" type="checkbox" ${sound.muted ? 'checked' : ''}/><i></i>SILENCIAR TUDO</label>
-    <div class="btn-row"><button class="gold-btn" data-x>PRONTO</button></div>`);
+  const el = open(`${CLOSE}<h2>SOUND</h2>
+    <div class="setting"><img src="./ui/ic_music.webp" alt=""/><div><label for="vol-music">MUSIC</label><input id="vol-music" type="range" min="0" max="100" value="${pct(sound.musicVolume)}"/></div><output id="o-music">${pct(sound.musicVolume)}%</output></div>
+    <div class="setting"><img src="./ui/ic_sound.webp" alt=""/><div><label for="vol-sfx">SOUND EFFECTS</label><input id="vol-sfx" type="range" min="0" max="100" value="${pct(sound.sfxVolume)}"/></div><output id="o-sfx">${pct(sound.sfxVolume)}%</output></div>
+    <label class="switch"><input id="mute" type="checkbox" ${sound.muted ? 'checked' : ''}/><i></i>MUTE ALL</label>
+    <div class="btn-row"><button class="gold-btn" data-x>DONE</button></div>`);
   const bind = (id: string, out: string, fn: (v: number) => void) => {
     const inp = el.querySelector<HTMLInputElement>('#' + id)!;
     const o = el.querySelector('#' + out)!;

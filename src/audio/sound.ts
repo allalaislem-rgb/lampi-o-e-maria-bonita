@@ -17,8 +17,9 @@ export type Sfx =
   | 'chest_hover' | 'chest_open' | 'chest_empty' | 'treasure' | 'couple' | 'lock' | 'respin' | 'respin_reset'
   | 'emblem' | 'grand' | 'bigwin_hit' | 'bigwin_end' | 'tier_up' | 'feature_end' | 'error';
 
-const STEMS: Record<MusicMode, [string, string]> = {
-  base: ['music_base', 'music_base_tension'],
+/** [main, intensity layer 1, optional intensity layer 2] – all stems of a mode share length & tempo. */
+const STEMS: Record<MusicMode, string[]> = {
+  base: ['music_base', 'music_base_tension', 'music_base_drive'],
   escape: ['music_escape', 'music_escape_hype'],
   hideout: ['music_hideout', 'music_hideout_tension'],
   laststand: ['music_laststand', 'music_laststand_intense'],
@@ -33,6 +34,7 @@ interface Playing {
   srcs: AudioBufferSourceNode[];
   main: GainNode;
   layer: GainNode | null;
+  layer2: GainNode | null;
   bus: GainNode;
 }
 
@@ -226,22 +228,23 @@ export class SoundManager {
     const ctx = this.ctx;
     if (!ctx) return;
     if (!force && this.current?.mode === mode) return;
-    const [mainName, layerName] = STEMS[mode];
+    const names = STEMS[mode];
     const bus = ctx.createGain();
     bus.gain.value = 0;
     bus.connect(this.musicBus);
-    const main = ctx.createGain();
-    const layer = ctx.createGain();
-    main.connect(bus);
-    layer.connect(bus);
-    layer.gain.value = 0;
+    const gains = names.map((_, i) => {
+      const g = ctx.createGain();
+      g.gain.value = i === 0 ? 1 : 0;
+      g.connect(bus);
+      return g;
+    });
     this.layerLevel = 0;
-    await Promise.all([this.buffer(mainName), this.buffer(layerName)]);
+    await Promise.all(names.map((n) => this.buffer(n)));
     if (this.wantedMode !== mode) return;
     const when = ctx.currentTime + 0.05;
-    const srcs = (await Promise.all([this.startLoop(mainName, main, when), this.startLoop(layerName, layer, when)])).filter(Boolean) as AudioBufferSourceNode[];
+    const srcs = (await Promise.all(names.map((n, i) => this.startLoop(n, gains[i], when)))).filter(Boolean) as AudioBufferSourceNode[];
     this.fadeOut(this.current, 1.2);
-    this.current = { mode, srcs, main, layer, bus };
+    this.current = { mode, srcs, main: gains[0], layer: gains[1] ?? null, layer2: gains[2] ?? null, bus };
     bus.gain.setValueAtTime(0, ctx.currentTime);
     bus.gain.linearRampToValueAtTime(1, ctx.currentTime + 1.2);
   }
@@ -261,15 +264,25 @@ export class SoundManager {
     });
   }
 
-  /** Intensity layer 0..1 (tension / hype / intense) – crossfaded in sync. */
+  /**
+   * Music intensity, crossfaded in sync:
+   *   0   calm  · 1   tension (near miss / scatter anticipation) · 2   drive (bonus hit)
+   * Fractions blend. Modes with a single intensity layer clamp at 1.
+   */
   setIntensity(level: number, secs = 0.8) {
     this.layerLevel = level;
-    if (!this.ctx || !this.current?.layer) return;
-    const g = this.current.layer.gain;
+    if (!this.ctx || !this.current) return;
     const now = this.ctx.currentTime;
-    g.cancelScheduledValues(now);
-    g.setValueAtTime(g.value, now);
-    g.linearRampToValueAtTime(level, now + secs);
+    const ramp = (g: GainNode | null, v: number) => {
+      if (!g) return;
+      g.gain.cancelScheduledValues(now);
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.linearRampToValueAtTime(v, now + secs);
+    };
+    ramp(this.current.layer, Math.min(1, Math.max(0, level)));
+    ramp(this.current.layer2, Math.min(1, Math.max(0, level - 1)));
+    // the drive layer carries the groove – lift the main bed slightly less when it is in
+    ramp(this.current.main, level > 1 ? 0.85 : 1);
   }
 
   get intensity() {
@@ -290,7 +303,7 @@ export class SoundManager {
     g.connect(bus);
     const src = await this.startLoop('music_bigwin', g, ctx.currentTime + 0.02);
     bus.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.3);
-    this.bigwin = { mode: 'bigwin', srcs: src ? [src] : [], main: g, layer: null, bus };
+    this.bigwin = { mode: 'bigwin', srcs: src ? [src] : [], main: g, layer: null, layer2: null, bus };
   }
   stopBigWin() {
     this.fadeOut(this.bigwin, 0.6);

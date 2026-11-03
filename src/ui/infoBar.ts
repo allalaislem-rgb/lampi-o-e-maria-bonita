@@ -4,7 +4,7 @@
  */
 import { Container, Sprite, Graphics, Text, NineSliceSprite } from 'pixi.js';
 import gsap from 'gsap';
-import { goldText, plainText, T, destroyDeep } from './gfx';
+import { goldText, plainText, T, destroyDeep, type GText } from './gfx';
 import { tex } from './assets';
 
 /** Painted wood & gold panel (from the art sheet), nine-sliced so corners stay crisp at any size. */
@@ -17,7 +17,7 @@ function plateSprite(_name: string, w: number, h: number) {
 
 export class Plate extends Container {
   labelText: Text;
-  value: Text;
+  value: GText;
   glow: Sprite;
   constructor(label: string, w: number, h = 104) {
     super();
@@ -47,7 +47,7 @@ export class Plate extends Container {
 /** Escape multiplier meter: ×N with 10 gold studs. */
 export class MultiplierMeter extends Container {
   pips: Graphics[] = [];
-  value: Text;
+  value: GText;
   glow: Sprite;
   constructor(private cap = 10) {
     super();
@@ -58,7 +58,7 @@ export class MultiplierMeter extends Container {
     this.glow.alpha = 0;
     this.glow.scale.set(6, 1.8);
     this.glow.tint = 0xffa030;
-    const lbl = plainText('MULTIPLICADOR DE FUGA', 17, '#f7c84a');
+    const lbl = plainText('ESCAPE MULTIPLIER', 17, '#f7c84a');
     lbl.position.set(30, -30);
     this.value = goldText('×1', 52);
     this.value.position.set(-160, 4);
@@ -98,7 +98,7 @@ export class CoupleTracker extends Container {
   constructor() {
     super();
     this.addChild(plateSprite('plate_wide', 300, 110));
-    const lbl = plainText('FORTUNA DO CASAL', 15, '#f7c84a');
+    const lbl = plainText("COUPLE'S FORTUNE", 15, '#f7c84a');
     lbl.y = -32;
     this.addChild(lbl);
     const mk = (name: string, x: number, h: number) => {

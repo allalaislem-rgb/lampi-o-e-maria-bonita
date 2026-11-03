@@ -1,15 +1,15 @@
 /**
  * LastStandView – dedicated 5×3 Hold & Respin grid.
  */
-import { Container, Sprite, Text } from 'pixi.js';
+import { Container, Sprite } from 'pixi.js';
 import gsap from 'gsap';
 import type { LSCell, RespinResult } from '../engine/features/lastStand';
 import { tex } from './assets';
-import { T, goldText, plainText, destroyDeep } from './gfx';
+import { T, goldText, plainText, destroyDeep, type GText } from './gfx';
 import type { FX } from './fx';
 import { money } from './format';
 import { sound } from '../audio/sound';
-import { CELL_W, CELL_H } from './reels';
+import { CELL_W, CELL_H, paintedFrame } from './reels';
 
 const MULT_TEX: Record<number, string> = { 2: 'badge_2', 3: 'badge_3', 5: 'badge_5', 10: 'badge_10' };
 const GHOSTS = ['coin_blank', 'badge_2', 'emblem_sun', 'coin_blank', 'badge_5', 'coinspin_3'];
@@ -44,17 +44,16 @@ export class LastStandView extends Container {
   frame: Sprite;
   constructor(private fx: FX) {
     super();
-    this.frame = new Sprite(tex('frame_last'));
-    this.frame.width = 1120;
-    this.frame.height = 710;
-    this.frame.position.set(-60, -110);
-    this.addChild(this.frame);
+    const pf = paintedFrame();
+    this.frame = pf.front;
+    this.addChild(pf.back);
     for (let i = 0; i < 15; i++) {
       const s = new Slot();
       s.position.set(Math.floor(i / 3) * CELL_W + CELL_W / 2, (i % 3) * CELL_H + CELL_H / 2);
       this.slots.push(s);
       this.addChild(s);
     }
+    this.addChild(this.frame);
   }
 
   setCells(cells: (LSCell | null)[], bet: number) {
@@ -70,7 +69,7 @@ export class LastStandView extends Container {
     s.glow.alpha = 0;
     if (!cell) return;
     let icon: Sprite;
-    let label: Text | null = null;
+    let label: GText | null = null;
     if (cell.kind === 'coin') {
       icon = new Sprite(tex('coin_blank'));
       label = goldText(money(cell.value * bet), cell.value >= 25 ? 32 : 28);
@@ -87,7 +86,7 @@ export class LastStandView extends Container {
     s.content.addChild(icon);
     if (label) s.content.addChild(label);
     if (cell.kind === 'coin' && cell.value >= 10) {
-      const tag = plainText(cell.value >= 50 ? 'MEGA' : cell.value >= 25 ? 'MAIOR' : 'MENOR', 15, '#fff1b0');
+      const tag = plainText(cell.value >= 50 ? 'MEGA' : cell.value >= 25 ? 'MAJOR' : 'MINOR', 15, '#fff1b0');
       tag.y = -56;
       s.content.addChild(tag);
     }

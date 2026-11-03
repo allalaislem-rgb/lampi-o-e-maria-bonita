@@ -1,7 +1,7 @@
 /**
  * Shared texture accessors and text styles.
  */
-import { FillGradient, Text, TextStyle, type Texture } from 'pixi.js';
+import { BitmapText, FillGradient, Text, TextStyle, type Texture } from 'pixi.js';
 import gsap from 'gsap';
 import { tex, seq } from './assets';
 
@@ -43,7 +43,33 @@ function goldFill() {
   });
 }
 
-export function goldText(text: string, size: number, font = FONT_NUM, strokeW = Math.max(3, size / 8)): Text {
+/** Characters available in the client's western bitmap font (public/fonts/western.fnt). */
+const WESTERN = new Set('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$,.+%-!?×ÃÕÁÉÍÓÚÂÊÔÀÇ '.split(''));
+export const WESTERN_FONT = 'Western';
+const fits = (t: string) => [...t.toUpperCase()].every((c) => WESTERN.has(c));
+
+/** Bitmap text in the client's painted western font that upper-cases whatever it is given. */
+export class WesternText extends BitmapText {
+  constructor(text: string, size: number) {
+    super({ text: text.toUpperCase(), style: { fontFamily: WESTERN_FONT, fontSize: size }, anchor: 0.5 });
+  }
+  override set text(v: string) {
+    super.text = String(v).toUpperCase();
+  }
+  override get text(): string {
+    return super.text;
+  }
+}
+
+export type GText = Text | BitmapText;
+
+/**
+ * Big numbers / titles. Uses the client's painted western bitmap font whenever every
+ * character exists in it; falls back to a gold gradient Rye/Alfa text otherwise
+ * (e.g. apostrophes, lowercase).
+ */
+export function goldText(text: string, size: number, font = FONT_NUM, strokeW = Math.max(3, size / 8)): GText {
+  if (fits(text)) return new WesternText(text, size * 1.05);
   return new Text({
     text,
     style: new TextStyle({

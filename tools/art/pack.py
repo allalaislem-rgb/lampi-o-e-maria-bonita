@@ -19,22 +19,16 @@ SYMBOLS = ['sym_lampiao', 'sym_maria', 'sym_wild', 'sym_wanted', 'sym_map', 'sym
 # painted sheet cuts (tools/art/cut_sheet.py) + remaining code-drawn objects (tools/art/objects.mjs)
 OBJECTS = ['chest_closed', 'chest_open', 'chest_treasure', 'chest_empty', 'coin', 'coin_blank', 'token_mult', 'coins_pile',
            'emblem_sun', 'medallion', 'gold_star', 'heart_gem', 'lantern', 'scarf', 'rider', 'ls_cell',
-           'badge_1', 'badge_2', 'badge_3', 'badge_5', 'badge_10', 'bar_wide', 'bar_small', 'panel_ribbon', 'banner_bonus', 'card_scatter', 'card_hideout', 'card_last',
+           'badge_1', 'badge_2', 'badge_3', 'badge_5', 'badge_10', 'bar_wide', 'bar_small', 'panel_ribbon', 'banner_bonus', 'card_scatter', 'card_hideout', 'card_last', 'tile_wild', 'tile_scatter', 'tile_fs', 'plank', 'pan_red', 'pan_rope', 'pan_sunset', 'btn_bonusbuy',
            'casing_1', 'casing_2', 'flower_0', 'flower_1', 'flower_2',
            *[f'coinspin_{i}' for i in range(7)], *[f'flare_{i}' for i in range(5)], *[f'smoke_{i}' for i in range(4)],
            'blast_0', 'blast_1', 'muzzle_0', 'muzzle_1', 'puff_0', 'puff_1',
            'fx_glow', 'fx_dot', 'fx_spark', 'fx_ring', 'fx_streak', 'fx_rays', 'fx_dust1', 'fx_dust2', 'fx_ember', 'fx_flare',
            'fx_shine', 'fx_smoke']
 STANDALONE = {  # name: (max width, quality)
-    'logo': (1000, 92), 'title_escape': (440, 90), 'title_hideout': (440, 90), 'title_last': (440, 90),
-    'title_escape_lg': (900, 90), 'title_hideout_lg': (900, 90), 'title_last_lg': (900, 90),
+    # logo, bonus cards, painted background & reel frame are written directly by tools/art/cut_v6.py
     'win_big': (1080, 90), 'win_mega': (1080, 90), 'win_epic': (1080, 90),
-    'frame_base': (1792, 90), 'frame_hideout': (1792, 90), 'frame_last': (1792, 90),
 }
-for scene in ['base', 'escape', 'hideout', 'laststand']:
-    STANDALONE[f'bg_{scene}_back'] = (1920, 84)
-    STANDALONE[f'bg_{scene}_mid'] = (1920, 86)
-    STANDALONE[f'bg_{scene}_front'] = (1920, 86)
 
 
 def load(name):
@@ -99,7 +93,7 @@ def main():
         syms.append((n + '_blur', motion_blur(im)))
     pack('symbols', syms, max_w=4096)
     pack('objects', [(n, load(n)) for n in OBJECTS], max_w=2048)
-    chars = [f'lamp_{i}' for i in range(6)] + [f'maria_{i}' for i in range(6)] + [f'glowcard_{i}' for i in range(10)]
+    chars = [f'lamp_{i}' for i in range(6)] + [f'maria_{i}' for i in range(6)] + [f'glowcard_{i}' for i in range(10)] + [f'ride_{i}' for i in range(24)]
     pack('chars', [(n, load(n)) for n in chars], max_w=2048)
     for n, (mw, q) in STANDALONE.items():
         im = load(n.replace('_lg', ''))

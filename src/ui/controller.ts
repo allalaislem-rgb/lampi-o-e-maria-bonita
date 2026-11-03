@@ -30,6 +30,7 @@ export class Controller {
   private force: ForceOptions | null = null;
   private forceFsRaid = false;
   private lastBaseGrid: Grid | null = null;
+  private calm: gsap.core.Tween | null = null;
 
   constructor(private client: GameClient, private stage: Stage) {}
 
@@ -41,11 +42,16 @@ export class Controller {
     const s = this.snap;
     this.hud.show();
     this.refresh(s);
-    this.hud.setWin(0, 'GANHO', false);
+    this.hud.setWin(0, 'WIN', false);
     this.bind();
     this.stage.layout();
     void sound.setMode('base');
-    this.stage.reels.onAnticipation = (on) => sound.setIntensity(on ? 1 : 0, on ? 0.6 : 1.5);
+    this.stage.reels.onAnticipation = (on) => {
+      if (on) {
+        this.calm?.kill();
+        sound.setIntensity(1.35, 0.5);
+      }
+    };
     // recovery of an interrupted game
     if (s.phase === 'BONUS_CHOICE' && s.pendingChoice) {
       this.busy = true;
@@ -89,11 +95,11 @@ export class Controller {
       sound.play('click');
       this.stage.reels.turbo = !this.stage.reels.turbo;
       h.turbo.classList.toggle('active', this.stage.reels.turbo);
-      UI.toast(this.stage.reels.turbo ? 'Turbo LIGADO' : 'Turbo DESLIGADO', 1000);
+      UI.toast(this.stage.reels.turbo ? 'Turbo ON' : 'Turbo OFF', 1000);
     });
     h.auto.addEventListener('click', async () => {
       sound.play('click');
-      if (!GAME_CONFIG.autoplay.enabled) return UI.toast('Jogo automático indisponível neste mercado');
+      if (!GAME_CONFIG.autoplay.enabled) return UI.toast('Autoplay is not available in this market');
       if (this.autoLeft > 0) return this.stopAuto();
       if (this.busy) return;
       const n = await UI.showAutoplay(GAME_CONFIG.autoplay.options);
@@ -103,7 +109,7 @@ export class Controller {
       void this.spin();
     });
     const syncSoundIcon = () => {
-      (h.soundBtn.querySelector('img') as HTMLImageElement).src = sound.muted || (sound.musicVolume === 0 && sound.sfxVolume === 0) ? './ui/btn_mute.webp' : './ui/btn_sound.webp';
+      h.soundBtn.classList.toggle('off', sound.muted || (sound.musicVolume === 0 && sound.sfxVolume === 0));
     };
     syncSoundIcon();
     h.soundBtn.addEventListener('click', () => {
@@ -120,7 +126,7 @@ export class Controller {
     full.addEventListener('click', () => {
       sound.play('click');
       if (document.fullscreenElement) void document.exitFullscreen();
-      else void document.documentElement.requestFullscreen().catch(() => UI.toast('Tela cheia indisponível'));
+      else void document.documentElement.requestFullscreen().catch(() => UI.toast('Fullscreen not available'));
     });
     document.addEventListener('fullscreenchange', () => setTimeout(() => this.stage.layout(), 150));
     document.getElementById('btn-history')!.addEventListener('click', () => {
@@ -145,17 +151,17 @@ export class Controller {
           };
           if (k === 'fsRaid') {
             this.forceFsRaid = true;
-            UI.toast('O próximo giro grátis ativará o Ataque dos Cangaceiros');
+            UI.toast('Next free spin will trigger the Cangaceiro Raid');
           } else {
             this.force = map[k];
-            UI.toast('Resultado forçado armado para o próximo giro');
+            UI.toast('Forced outcome armed for the next spin');
           }
         },
         reset: async () => {
-          if (this.busy) return UI.toast('Termine a rodada atual primeiro');
+          if (this.busy) return UI.toast('Finish the current round first');
           const s = await this.client.resetWallet();
           this.refresh(s);
-          UI.toast('Carteira simulada reiniciada');
+          UI.toast('Simulated wallet reset');
         },
       });
     });
@@ -197,7 +203,7 @@ export class Controller {
     if (s.phase !== 'IDLE') return;
     if (s.balance < s.bet) {
       sound.play('error');
-      UI.toast('Saldo insuficiente – diminua a aposta ou reinicie a carteira demo');
+      UI.toast('Insufficient balance – lower your bet or reset the demo wallet');
       this.stopAuto();
       return;
     }
@@ -205,7 +211,7 @@ export class Controller {
     this.winSignal.cancelled = true;
     this.winSignal = { cancelled: false };
     this.hud.setBusy(true, false, this.autoLeft > 0);
-    this.hud.setWin(0, 'GANHO', false);
+    this.hud.setWin(0, 'WIN', false);
     this.hud.setBalance(s.balance - s.bet);
     sound.play('spin');
     this.stage.reels.allowWildInSpin = true;
@@ -226,6 +232,13 @@ export class Controller {
     const o = resp.outcome;
     await this.stage.reels.stopOn(o.grid);
     this.lastBaseGrid = o.finalGrid;
+    // dynamic music: a near miss (2 of any scatter) lifts the tension, then it eases off
+    const nearMiss = (['WANT', 'MAP', 'EMBL'] as const).some((k) => o.scatters[k].length === 2);
+    this.calm?.kill();
+    if (!o.triggers.length) {
+      if (nearMiss) sound.setIntensity(1, 0.4);
+      this.calm = gsap.delayedCall(nearMiss ? 4 : 0.2, () => sound.setIntensity(0, nearMiss ? 3 : 1.5));
+    }
 
     // random events (they changed the authoritative outcome before evaluation)
     if (o.event?.type === 'arrival') {
@@ -257,7 +270,8 @@ export class Controller {
       const pos = [...(triggered.includes('greatEscape') ? o.scatters.WANT : []), ...(triggered.includes('hideout') ? o.scatters.MAP : []), ...(triggered.includes('lastStand') ? o.scatters.EMBL : [])];
       this.stage.reels.clearWins();
       sound.play('trigger');
-      sound.setIntensity(1, 0.3);
+      this.calm?.kill();
+      sound.setIntensity(2, 0.25);
       for (const f of triggered) sound.prefetch(THEME[f]);
       await this.stage.reels.celebrateScatters(pos);
       if (this.autoLeft > 0 && GAME_CONFIG.autoplay.stopOnFeature) this.stopAuto();
@@ -296,8 +310,8 @@ export class Controller {
     if (this.busy || this.client.isBusy || UI.isOverlayOpen()) return;
     sound.play('click');
     const s = this.snap;
-    if (!s.buyEnabled) return UI.toast('Compra de bônus indisponível');
-    if (s.bet > s.buyMaxBet) return UI.toast(`Compra de bônus disponível até uma aposta de ${money(s.buyMaxBet)}`);
+    if (!s.buyEnabled) return UI.toast('Bonus Buy is not available');
+    if (s.bet > s.buyMaxBet) return UI.toast(`Bonus Buy is available up to a bet of ${money(s.buyMaxBet)}`);
     const price = s.buyPrices[f];
     const ok = await UI.confirmBuy(f, price, s.balance, GAME_CONFIG.bonusBuy.prices[f]);
     if (!ok) return;
@@ -307,7 +321,7 @@ export class Controller {
     try {
       const r = await this.client.buy(f);
       this.hud.setBalance(r.snapshot.balance);
-      this.hud.setWin(0, 'GANHO', false);
+      this.hud.setWin(0, 'WIN', false);
       sound.play('coin');
       await this.runFeature(f, false);
     } catch (e) {
@@ -346,7 +360,7 @@ export class Controller {
 
     const fw = settled?.featureWin ?? 0;
     if (settled && fw >= BIG_WIN_X * settled.bet) await st.bigWin(fw, settled.bet, money);
-    await UI.showOutro(f, fw, settled?.maxWinReached ? '<p class="sub">GANHO MÁXIMO ATINGIDO</p>' : settled && settled.baseWin > 0 ? `<p class="note">Total da rodada incl. ganho do jogo base: ${money(settled.totalWin)}</p>` : '');
+    await UI.showOutro(f, fw, settled?.maxWinReached ? '<p class="sub">MAXIMUM WIN REACHED</p>' : settled && settled.baseWin > 0 ? `<p class="note">Round total incl. base game win: ${money(settled.totalWin)}</p>` : '');
     await st.transition(() => {
       st.env.set('base', true);
       st.info.clearAll();
@@ -365,18 +379,18 @@ export class Controller {
 
   private async playGreatEscape(fs: Extract<PublicFeature, { feature: 'greatEscape' }>, bet: number, baseWin: number): Promise<RoundSummary | null> {
     const st = this.stage;
-    const spins = new Plate('GIROS GRÁTIS', 250);
+    const spins = new Plate('FREE SPINS', 250);
     spins.position.set(-WIN_W / 2 + 120, 0);
     const meter = new MultiplierMeter(GAME_CONFIG.greatEscape.multiplierCap);
     meter.position.set(-10, 0);
-    const total = new Plate('GANHO DO BÔNUS', 270);
+    const total = new Plate('FEATURE WIN', 270);
     total.position.set(WIN_W / 2 - 130, 0);
     st.info.addChild(spins, meter, total);
     spins.set(`${fs.spinsLeft}`);
     meter.set(fs.multiplier, false);
     total.set(money(fs.totalWin));
     if (fs.lastGrid) st.reels.showGrid(fs.lastGrid as Grid);
-    this.hud.setWin(baseWin + fs.totalWin, 'GANHO TOTAL', false);
+    this.hud.setWin(baseWin + fs.totalWin, 'TOTAL WIN', false);
 
     for (;;) {
       st.reels.startSpin();
@@ -388,7 +402,7 @@ export class Controller {
       await wait(st.reels.turbo ? 100 : 250);
       await st.reels.stopOn(res.grid);
       if (res.raidReels.length) {
-        await st.callout('ATAQUE DOS CANGACEIROS!', '', 900, ['sym_hat']);
+        await st.callout('CANGACEIRO RAID!', '', 900, ['sym_hat']);
         sound.play('raid');
         await st.reels.wildReel(res.raidReels, 'raid');
       }
@@ -397,7 +411,7 @@ export class Controller {
         sound.play(res.spinWin >= 5 * bet ? 'win_medium' : 'win_small');
         const suffix = res.qualifying && res.multiplierBefore > 1 ? `  ×${res.multiplierBefore}` : '';
         total.set(money(res.totalWin), true);
-        this.hud.setWin(baseWin + res.totalWin, 'GANHO TOTAL');
+        this.hud.setWin(baseWin + res.totalWin, 'TOTAL WIN');
         const sig = { cancelled: false };
         await st.reels.presentWins(res.lineWins, res.spinWin, money, sig, false, suffix);
         if (res.spinWin >= BIG_WIN_X * bet) await st.bigWin(res.spinWin, bet, money);
@@ -411,7 +425,7 @@ export class Controller {
       if (res.retriggerSpins > 0) {
         sound.play('retrigger');
         await st.reels.celebrateScatters(res.grid.flatMap((col, ri) => col.map((s, row) => (s === 'WANT' ? ([ri, row] as [number, number]) : null)).filter(Boolean) as [number, number][]));
-        await st.callout(`+${res.retriggerSpins} GIROS GRÁTIS`, 'MULTIPLICADOR MANTIDO', 1400, ['sym_wanted']);
+        await st.callout(`+${res.retriggerSpins} FREE SPINS`, 'MULTIPLIER KEPT', 1400, ['sym_wanted']);
       }
       spins.set(`${res.spinsLeft}`, true);
       if (r.settled) return r.settled;
@@ -421,11 +435,11 @@ export class Controller {
 
   private async playHideout(h: Extract<PublicFeature, { feature: 'hideout' }>, bet: number, baseWin: number): Promise<RoundSummary | null> {
     const st = this.stage;
-    const picks = new Plate('ESCOLHAS', 230);
+    const picks = new Plate('PICKS LEFT', 230);
     picks.position.set(-WIN_W / 2 + 110, 0);
-    const mult = new Plate('MULTIPLICADOR', 200);
+    const mult = new Plate('MULTIPLIER', 200);
     mult.position.set(-WIN_W / 2 + 330, 0);
-    const coll = new Plate('GANHO DO BÔNUS', 260);
+    const coll = new Plate('FEATURE WIN', 260);
     coll.position.set(WIN_W / 2 - 400, 0);
     const couple = new CoupleTracker();
     couple.position.set(WIN_W / 2 - 140, 0);
@@ -440,9 +454,9 @@ export class Controller {
     st.hideout.setup(h, bet);
     st.hideout.entrance();
     sound.setIntensity(h.picksLeft <= 1 ? 1 : 0);
-    this.hud.setWin(baseWin + h.coinTotal * h.multiplier * bet, 'GANHO TOTAL', false);
+    this.hud.setWin(baseWin + h.coinTotal * h.multiplier * bet, 'TOTAL WIN', false);
     st.hideout.setEnabled(true);
-    UI.toast('Escolha um baú!', 1600);
+    UI.toast('Choose a chest!', 1600);
 
     return new Promise<RoundSummary | null>((resolve) => {
       let pending = false;
@@ -456,14 +470,14 @@ export class Controller {
           await st.hideout.open(i, res.prize);
           const s = r.snapshot.feature as Extract<PublicFeature, { feature: 'hideout' }> | null;
           upd({ picksLeft: res.picksLeft, multiplier: res.multiplier, coinTotal: res.coinTotal, hasTreasure: s ? s.hasTreasure : res.prize.type === 'treasure' || couple.lamp.tint === 0xffffff, hasMedallion: s ? s.hasMedallion : res.prize.type === 'medallion' || couple.maria.tint === 0xffffff, couplesFortune: s ? s.couplesFortune : res.couplesFortune }, true);
-          this.hud.setWin(baseWin + res.award, 'GANHO TOTAL');
+          this.hud.setWin(baseWin + res.award, 'TOTAL WIN');
           sound.setIntensity(res.picksLeft === 1 ? 1 : 0);
-          if (res.prize.type === 'extraPick') await st.callout('ESCOLHA EXTRA!', '+1', 900, ['gold_star']);
-          if (res.prize.type === 'medallion') await st.callout('MEDALHÃO DE MARIA', 'MULTIPLICADOR ×2', 1100, ['maria_5']);
-          if (res.prize.type === 'treasure') await st.callout('TESOURO DE LAMPIÃO', money(res.prize.value * bet), 1100, ['lamp_2']);
+          if (res.prize.type === 'extraPick') await st.callout('EXTRA PICK!', '+1', 900, ['gold_star']);
+          if (res.prize.type === 'medallion') await st.callout("MARIA'S MEDALLION", 'MULTIPLIER ×2', 1100, ['maria_5']);
+          if (res.prize.type === 'treasure') await st.callout("LAMPIÃO'S TREASURE", money(res.prize.value * bet), 1100, ['lamp_2']);
           if (res.couplesFortune) {
             sound.play('couple');
-            await st.callout('FORTUNA DO CASAL!', `+${money(GAME_CONFIG.hideout.couplesFortune * bet)}`, 2200, ['lamp_0', 'heart_gem', 'maria_4']);
+            await st.callout("COUPLE'S FORTUNE!", `+${money(GAME_CONFIG.hideout.couplesFortune * bet)}`, 2200, ['lamp_0', 'heart_gem', 'maria_4']);
           }
           if (r.settled) {
             if (res.reveal) await st.hideout.revealRest(res.reveal);
@@ -482,13 +496,13 @@ export class Controller {
 
   private async playLastStand(ls: Extract<PublicFeature, { feature: 'lastStand' }>, bet: number, baseWin: number): Promise<RoundSummary | null> {
     const st = this.stage;
-    const respins = new Plate('REGIROS', 210);
+    const respins = new Plate('RESPINS', 210);
     respins.position.set(-WIN_W / 2 + 100, 0);
-    const gold = new Plate('OURO', 230);
+    const gold = new Plate('GOLD', 230);
     gold.position.set(-WIN_W / 2 + 330, 0);
-    const mult = new Plate('MULTIPLICADOR', 200);
+    const mult = new Plate('MULTIPLIER', 200);
     mult.position.set(WIN_W / 2 - 370, 0);
-    const total = new Plate('GANHO DO BÔNUS', 260);
+    const total = new Plate('FEATURE WIN', 260);
     total.position.set(WIN_W / 2 - 130, 0);
     st.info.addChild(respins, gold, mult, total);
     const upd = (r: { respinsLeft: number; coinSum: number; multSum: number }, award: number, pop = false) => {
@@ -503,7 +517,7 @@ export class Controller {
     intensity(ls.respinsLeft, ls.cells);
     const initialAward = Math.min(ls.coinSum * Math.max(1, ls.multSum) * bet, this.snap.maxWin);
     upd(ls, initialAward);
-    this.hud.setWin(baseWin + initialAward, 'GANHO TOTAL', false);
+    this.hud.setWin(baseWin + initialAward, 'TOTAL WIN', false);
     await wait(700);
     for (;;) {
       const r = await this.client.respin();
@@ -513,14 +527,14 @@ export class Controller {
       if (reset && !res.ended) sound.play('respin_reset');
       intensity(res.respinsLeft, res.cells);
       upd(res, res.award, true);
-      this.hud.setWin(baseWin + res.award, 'GANHO TOTAL');
+      this.hud.setWin(baseWin + res.award, 'TOTAL WIN');
       if (reset && !res.ended) gsap.fromTo(respins.scale, { x: 1.2, y: 1.2 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });
       if (r.settled) {
         if (res.full) {
           sound.play('grand');
           await st.laststand.celebrateFull();
-          await st.callout('GRANDE TESOURO!', money(GAME_CONFIG.lastStand.grandTreasure * bet), 2200, ['chest_treasure', 'emblem_sun', 'chest_treasure']);
-        } else if (res.capped) await st.callout('GANHO MÁXIMO!', '', 1600);
+          await st.callout('GRAND TREASURE!', money(GAME_CONFIG.lastStand.grandTreasure * bet), 2200, ['chest_treasure', 'emblem_sun', 'chest_treasure']);
+        } else if (res.capped) await st.callout('MAXIMUM WIN!', '', 1600);
         await wait(600);
         return r.settled;
       }

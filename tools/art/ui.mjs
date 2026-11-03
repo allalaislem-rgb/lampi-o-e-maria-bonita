@@ -26,7 +26,7 @@ function goldText(p, x, y, size, txt, { font = 'Rye', ls = 2, sw = null } = {}) 
 
 function winBanner(kind) {
   const p = 'WB' + kind;
-  const c = { big: ['#ffd36b', '#c4700e', 'GRANDE GANHO', 92], mega: ['#ff7a4a', '#a3160c', 'MEGA GANHO', 106], epic: ['#ff5ac8', '#5a1a9a', 'GANHO ÉPICO', 96] }[kind];
+  const c = { big: ['#ffd36b', '#c4700e', 'BIG WIN', 120], mega: ['#ff7a4a', '#a3160c', 'MEGA WIN', 118], epic: ['#ff5ac8', '#5a1a9a', 'EPIC WIN', 118] }[kind];
   const rays = Array.from({ length: 12 }, (_, i) => {
     const a = (i / 12) * Math.PI - Math.PI;
     return `<path d="M450 200 L ${450 + Math.cos(a - 0.08) * 460} ${200 + Math.sin(a - 0.08) * 300} L ${450 + Math.cos(a + 0.08) * 460} ${200 + Math.sin(a + 0.08) * 300} Z" fill="${c[0]}" opacity=".35"/>`;

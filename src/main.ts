@@ -10,6 +10,7 @@ import { loadAssets } from './ui/assets';
 import { Stage } from './ui/stage';
 import { Controller } from './ui/controller';
 import { sound } from './audio/sound';
+import { loadWesternDom } from './ui/westernDom';
 
 async function boot() {
   const fill = document.querySelector<HTMLElement>('#loader .fill')!;
@@ -30,6 +31,7 @@ async function boot() {
       progress();
     }),
     fonts,
+    loadWesternDom(),
   ]);
 
   // Authoritative engine (in-process for the prototype), persisted for interrupted-game recovery.
@@ -49,7 +51,7 @@ async function boot() {
   // Title screen: a user gesture is required to start audio.
   const play = document.getElementById('btn-play')!;
   document.querySelector('#loader .bar')!.classList.add('hidden');
-  document.querySelector('#loader .hint')!.textContent = server.recovered ? 'Seu bônus inacabado está esperando' : 'A lenda te espera';
+  document.querySelector('#loader .hint')!.textContent = server.recovered ? 'Your unfinished feature is waiting' : 'The legend awaits';
   play.classList.remove('hidden');
   await new Promise<void>((res) =>
     play.addEventListener(
@@ -74,5 +76,5 @@ async function boot() {
 boot().catch((e) => {
   console.error(e);
   const hint = document.querySelector('#loader .hint');
-  if (hint) hint.textContent = 'Falha ao carregar: ' + (e as Error).message;
+  if (hint) hint.textContent = 'Failed to load: ' + (e as Error).message;
 });

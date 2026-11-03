@@ -4,6 +4,7 @@
 import type { FeatureId } from '../config/gameConfig';
 import type { Snapshot } from '../engine/server';
 import { money } from './format';
+import { western } from './westernDom';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -29,22 +30,22 @@ export class Hud {
   }
 
   setBalance(c: number) {
-    this.balance.textContent = money(c);
+    western(this.balance, money(c));
   }
 
   setBet(snap: Snapshot) {
-    this.bet.textContent = money(snap.bet);
+    western(this.bet, money(snap.bet));
     this.minus.disabled = snap.betIndex <= 0;
     this.plus.disabled = snap.betIndex >= snap.betLevels.length - 1;
     for (const b of this.buyBtns) {
       const f = b.dataset.feature as FeatureId;
       const p = b.querySelector('.buy-price')!;
-      p.textContent = snap.buyEnabled ? money(snap.buyPrices[f]) : 'N/A';
+      western(p as HTMLElement, snap.buyEnabled ? money(snap.buyPrices[f]) : 'N/A');
     }
   }
 
   /** Animated count-up of the win meter. */
-  setWin(c: number, label = 'GANHO', animate = true) {
+  setWin(c: number, label = 'WIN', animate = true) {
     cancelAnimationFrame(this.winAnim);
     this.winLabel.textContent = label;
     this.winPanel.classList.toggle('lit', c > 0);
@@ -56,14 +57,14 @@ export class Hud {
     const from = Number(this.win.dataset.v || 0);
     this.win.dataset.v = String(c);
     if (!animate || c <= from) {
-      this.win.textContent = money(c);
+      western(this.win, money(c));
       return;
     }
     const t0 = performance.now();
     const dur = Math.min(1500, 300 + (c - from) / 50);
     const step = () => {
       const k = Math.min(1, (performance.now() - t0) / dur);
-      this.win.textContent = money(Math.round(from + (c - from) * (1 - Math.pow(1 - k, 3))));
+      western(this.win, money(Math.round(from + (c - from) * (1 - Math.pow(1 - k, 3)))));
       if (k < 1) this.winAnim = requestAnimationFrame(step);
     };
     step();
@@ -85,7 +86,7 @@ export class Hud {
   }
 
   setAutoplay(n: number) {
-    this.autoCount.textContent = n > 0 ? String(n) : '';
+    western(this.autoCount, n > 0 ? String(n) : '');
     this.spin.classList.toggle('auto', n > 0);
     this.auto.classList.toggle('active', n > 0);
   }

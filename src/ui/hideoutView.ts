@@ -2,15 +2,15 @@
  * HideoutView – 12-chest interactive pick board. A click only *requests* a pick
  * (onPick); the engine decides what the chest contains.
  */
-import { Container, Sprite, Text, Graphics } from 'pixi.js';
+import { Container, Sprite, Graphics } from 'pixi.js';
 import gsap from 'gsap';
 import type { ChestPrize, PublicHideout } from '../engine/features/hideout';
 import { tex } from './assets';
-import { T, goldText, plainText, destroyDeep } from './gfx';
+import { T, goldText, plainText, destroyDeep, type GText } from './gfx';
 import type { FX } from './fx';
 import { money } from './format';
 import { sound } from '../audio/sound';
-import { WIN_W, WIN_H } from './reels';
+import { WIN_W, WIN_H, paintedFrame } from './reels';
 
 const COLS = 4;
 const CW = WIN_W / COLS;
@@ -59,17 +59,17 @@ class Chest extends Container {
 export function prizeVisual(p: ChestPrize, bet: number): { texture: string; title: string; value: string; color: string } {
   switch (p.type) {
     case 'coins':
-      return { texture: 'coins_pile', title: 'OURO', value: money(p.value * bet), color: '#ffe48a' };
+      return { texture: 'coins_pile', title: 'GOLD', value: money(p.value * bet), color: '#ffe48a' };
     case 'multiplier':
-      return { texture: 'token_mult', title: 'MULTIPLICADOR', value: `+${p.value}×`, color: '#ffb0a0' };
+      return { texture: 'token_mult', title: 'MULTIPLIER', value: `+${p.value}×`, color: '#ffb0a0' };
     case 'extraPick':
-      return { texture: 'gold_star', title: 'ESCOLHA EXTRA', value: '+1', color: '#fff1b0' };
+      return { texture: 'gold_star', title: 'EXTRA PICK', value: '+1', color: '#fff1b0' };
     case 'treasure':
-      return { texture: 'chest_treasure', title: 'TESOURO DE LAMPIÃO', value: money(p.value * bet), color: '#ffcf5a' };
+      return { texture: 'chest_treasure', title: "LAMPIÃO'S TREASURE", value: money(p.value * bet), color: '#ffcf5a' };
     case 'medallion':
-      return { texture: 'medallion', title: 'MEDALHÃO DE MARIA', value: '×2', color: '#ff9d8a' };
+      return { texture: 'medallion', title: "MARIA'S MEDALLION", value: '×2', color: '#ff9d8a' };
     case 'empty':
-      return { texture: '', title: 'VAZIO', value: '', color: '#b9a38a' };
+      return { texture: '', title: 'EMPTY', value: '', color: '#b9a38a' };
   }
 }
 
@@ -82,11 +82,9 @@ export class HideoutView extends Container {
 
   constructor(private fx: FX) {
     super();
-    this.frame = new Sprite(tex('frame_hideout'));
-    this.frame.width = 1120;
-    this.frame.height = 710;
-    this.frame.position.set(-60, -110);
-    this.addChild(this.frame);
+    const pf = paintedFrame();
+    this.frame = pf.front;
+    this.addChild(pf.back);
     for (let i = 0; i < 12; i++) {
       const c = new Chest(i);
       c.position.set((i % COLS) * CW + CW / 2, Math.floor(i / COLS) * CH + CH / 2 + 2);
@@ -104,6 +102,7 @@ export class HideoutView extends Container {
       this.chests.push(c);
       this.addChild(c);
     }
+    this.addChild(this.frame);
   }
 
   setup(state: PublicHideout, bet: number) {
@@ -159,7 +158,7 @@ export class HideoutView extends Container {
     const title = plainText(vis.title, vis.title.length > 12 ? 13 : 16, vis.color);
     title.y = 53;
     layer.addChild(pill, title);
-    let val: Text | null = null;
+    let val: GText | null = null;
     if (vis.value && prize.type !== 'multiplier') {
       val = goldText(vis.value, 32);
       val.y = 14;

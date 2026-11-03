@@ -2,7 +2,7 @@
  * Stage – Pixi application, responsive layout, cinematic transitions,
  * bonus intro sequences, random-event banners and tiered win celebrations.
  */
-import { Application, Container, Graphics, Sprite, Text } from 'pixi.js';
+import { AnimatedSprite, Application, Container, Graphics, Sprite, Text } from 'pixi.js';
 import gsap from 'gsap';
 import { Environment } from './environment';
 import { FX } from './fx';
@@ -15,8 +15,8 @@ import { goldText, plainText, T, FONT_TITLE, destroyDeep } from './gfx';
 import { sound } from '../audio/sound';
 
 /** World design bounds (reel window is 0..1000 × 0..540, frame extends to -60..1060 × -110..600). */
-const WORLD = { x: -70, y: -300, w: 1140, h: 910 };
-const LOGO_W = 440;
+const WORLD = { x: -140, y: -330, w: 1280, h: 950 };
+const LOGO_W = 330;
 
 export class Stage {
   app = new Application();
@@ -86,7 +86,7 @@ export class Stage {
     const availH = h - bottom - top;
     const portrait = availH > availW * 1.15;
     if (portrait) {
-      const R = { x: -64, y: -112, w: 1128, h: 716 };
+      const R = { x: -134, y: -100, w: 1268, h: 715 };
       const s = Math.min(availW / R.w, (availH * 0.64) / R.h);
       this.world.scale.set(s);
       const reelsTop = top + availH * 0.6 - (R.h * s) / 2;
@@ -104,7 +104,7 @@ export class Stage {
       const s = Math.min(availW / WORLD.w, availH / WORLD.h);
       this.world.scale.set(s);
       this.world.position.set(w / 2 - (WORLD.x + WORLD.w / 2) * s, top + availH / 2 - (WORLD.y + WORLD.h / 2) * s);
-      this.logo.position.set(WIN_W / 2, -200);
+      this.logo.position.set(WIN_W / 2, -215);
       this.logoBase = LOGO_W / this.logo.texture.width;
       this.logo.scale.set(this.logoBase);
       this.info.position.set(WIN_W / 2, -180);
@@ -160,7 +160,7 @@ export class Stage {
   private titleSlam(name: string, y: number, maxW: number) {
     const t = new Sprite(tex(name));
     t.anchor.set(0.5);
-    const k = Math.min(maxW / t.texture.width, (this.h * 0.36) / t.texture.height);
+    const k = Math.min(maxW / t.texture.width, (this.h * 0.62) / t.texture.height);
     t.scale.set(k * 2.4);
     t.alpha = 0;
     t.position.set(this.w / 2, y);
@@ -182,19 +182,25 @@ export class Stage {
       for (let i = 0; i < 40; i++) {
         gsap.delayedCall(i * 0.03, () => this.sfx.spawn(T.streak(), this.w + 200, this.h * Math.random(), { vx: -this.w * 2.4, life: 0.7, scale: 1 + Math.random() * 2, sy: 0.6, add: true, tint: 0xffc080, alpha: 0.6 }));
       }
-      for (let i = 0; i < 4; i++) {
-        const r = new Sprite(tex('rider'));
-        r.anchor.set(0.5, 1);
-        r.scale.set((unit / 900) * (0.9 + i * 0.15));
-        r.tint = 0x1a0604;
-        r.position.set(-r.width - i * 220, this.h * (0.9 + i * 0.02));
-        layer.addChild(r);
-        gsap.to(r, { x: this.w + r.width, duration: 1.6, delay: i * 0.08, ease: 'none' });
-        gsap.to(r, { y: r.y - 14, duration: 0.16, yoyo: true, repeat: 9, ease: 'sine.inOut' });
-        gsap.delayedCall(0.2 + i * 0.2, () => this.sfx.dustBurst(this.w * (0.2 + i * 0.2), this.h * 0.86, 6, 260));
-      }
+      // client's painted posse: approach (frames 0–7) then gallop loop (8–23) across the screen
+      const all = seq('ride_', 24);
+      const r = new AnimatedSprite(all);
+      r.anchor.set(0.5, 1);
+      r.animationSpeed = 0.42;
+      r.loop = false;
+      r.scale.set((unit * 0.42) / all[0].height);
+      r.position.set(this.w * 0.08, this.h * 0.94);
+      r.onComplete = () => {
+        r.textures = all.slice(8);
+        r.loop = true;
+        r.gotoAndPlay(0);
+      };
+      r.play();
+      layer.addChild(r);
+      gsap.to(r, { x: this.w * 1.25, duration: 2.6, ease: 'power1.in' });
+      for (let i = 0; i < 6; i++) gsap.delayedCall(0.25 + i * 0.28, () => this.sfx.dustBurst(r.x - r.width * 0.3, this.h * 0.92, 5, 240));
       await wait(700);
-      title = this.titleSlam('title_escape_lg', this.h * 0.45, this.w * 0.62);
+      title = this.titleSlam('card_escape', this.h * 0.47, this.w * 0.6);
       gsap.delayedCall(0.4, () => this.shake(14));
     } else if (kind === 'hideout') {
       sound.play('intro_hideout');
@@ -212,7 +218,7 @@ export class Stage {
       gsap.to(dark, { alpha: 0, duration: 1.5, delay: 0.3, ease: 'sine.inOut' });
       for (let i = 0; i < 40; i++) this.sfx.spawn(T.dot(), this.w / 2 + (Math.random() - 0.5) * unit, this.h / 2 + (Math.random() - 0.5) * unit * 0.6, { vy: -20 - Math.random() * 30, life: 2.2, scale: 0.4 + Math.random(), add: true, tint: 0xffd890, fadeIn: 0.6, alpha: 0.7 });
       await wait(650);
-      title = this.titleSlam('title_hideout_lg', this.h * 0.45, this.w * 0.62);
+      title = this.titleSlam('card_hideout2', this.h * 0.47, this.w * 0.6);
       this.characterCameo('maria_', 6, -1, 0.75);
     } else {
       sound.play('intro_last');
@@ -223,7 +229,7 @@ export class Stage {
       gsap.timeline().to(flash, { alpha: 0.9, duration: 0.05 }).to(flash, { alpha: 0, duration: 0.25 }).to(flash, { alpha: 0.6, duration: 0.05, delay: 0.2 }).to(flash, { alpha: 0, duration: 0.6 });
       for (let i = 0; i < 4; i++) gsap.delayedCall(0.3 + i * 0.15, () => this.sfx.embers(0, this.h, this.w, 25, 0xff6a1a));
       await wait(1100);
-      title = this.titleSlam('title_last_lg', this.h * 0.45, this.w * 0.62);
+      title = this.titleSlam('card_last2', this.h * 0.47, this.w * 0.6);
       this.characterCameo('lamp_', 6, 1, 0.75);
       gsap.delayedCall(0.38, () => {
         this.shake(22, 0.6);
@@ -284,7 +290,7 @@ export class Stage {
     gsap.to(dim, { alpha: 1, duration: 0.25 });
     const unit = Math.min(this.w, this.h);
     const title = new Text({
-      text: kind === 'arrival' ? 'A CHEGADA DE LAMPIÃO!' : 'O ATAQUE DOS CANGACEIROS!',
+      text: kind === 'arrival' ? "LAMPIÃO'S ARRIVAL!" : "THE CANGACEIROS' RAID!",
       style: { fontFamily: FONT_TITLE, fontSize: Math.max(30, unit * 0.08), fill: kind === 'arrival' ? '#ffd760' : '#ff7a5a', stroke: { color: '#2a0d02', width: 9 }, dropShadow: { color: '#000', blur: 8, distance: 4, alpha: 0.8, angle: Math.PI / 2 }, align: 'center', wordWrap: true, wordWrapWidth: this.w * 0.9, padding: 10 },
       anchor: 0.5,
       resolution: 2,
@@ -393,7 +399,7 @@ export class Stage {
     const breathe = gsap.to(banner.scale, { x: bk * 1.04, y: bk * 1.04, duration: 0.5, yoyo: true, repeat: -1, delay: 0.6, ease: 'sine.inOut' });
     const amt = goldText(fmt(0), Math.max(44, unit * 0.11));
     amt.position.set(this.w / 2, this.h * 0.68);
-    const tap = plainText('TOQUE PARA CONTINUAR', Math.max(14, unit * 0.025), '#f7c84a');
+    const tap = plainText('TAP TO CONTINUE', Math.max(14, unit * 0.025), '#f7c84a');
     tap.position.set(this.w / 2, this.h * 0.84);
     tap.alpha = 0;
     layer.addChild(amt, tap);

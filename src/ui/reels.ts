@@ -207,11 +207,9 @@ export class ReelsView extends Container {
 
   constructor(private fx: FX) {
     super();
-    this.frame = new Sprite(tex('frame_base'));
-    this.frame.width = 1120;
-    this.frame.height = 710;
-    this.frame.position.set(-60, -110);
-    this.addChild(this.frame);
+    const pf = paintedFrame();
+    this.frame = pf.front;
+    this.addChild(pf.back);
 
     this.maskG.rect(0, 0, WIN_W, WIN_H).fill(0xffffff);
     this.addChild(this.maskG);
@@ -234,7 +232,7 @@ export class ReelsView extends Container {
       this.anticip.push(g);
       this.addChild(g);
     }
-    this.addChild(this.overlay, this.lines, this.lineFx);
+    this.addChild(this.overlay, this.frame, this.lines, this.lineFx);
     this.winLabel = goldText('', 70);
     this.winLabel.position.set(WIN_W / 2, WIN_H / 2);
     this.winLabel.visible = false;
@@ -247,9 +245,7 @@ export class ReelsView extends Container {
   }
 
   setFrame(theme: 'base' | 'escape') {
-    this.frame.texture = tex(theme === 'escape' ? 'frame_last' : 'frame_base');
-    this.frame.width = 1120;
-    this.frame.height = 710;
+    this.frame.tint = theme === 'escape' ? 0xffe0c8 : 0xffffff;
   }
 
   private randomSym(): SymbolId {
@@ -689,4 +685,22 @@ export function wait(ms: number, signal?: { cancelled: boolean }) {
     };
     tick();
   });
+}
+
+/**
+ * The client's painted reel frame (frame_painted, 1672×941). Its inner window
+ * (x 175–1500, y 130–838 in the source) is mapped onto the 1000×540 reel window,
+ * so lanterns, cacti, the skull and the wagon wheel slightly overlap the reel edges.
+ * Returns a dark backing plate (behind the symbols) and the frame (drawn on top).
+ */
+export function paintedFrame() {
+  const k = WIN_W / 1325;
+  const front = new Sprite(tex('frame_painted'));
+  front.scale.set(k);
+  front.position.set(-175 * k, -130 * k);
+  front.eventMode = 'none';
+  const back = new Graphics()
+    .roundRect(88 * k - 175 * k, 120 * k - 130 * k, (1585 - 88) * k, (849 - 120) * k, 10)
+    .fill({ color: 0x1a0c06, alpha: 0.88 });
+  return { front, back };
 }

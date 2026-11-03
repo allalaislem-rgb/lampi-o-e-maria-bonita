@@ -56,72 +56,85 @@ def buf(seconds):
 
 # ======================================================================== BASE
 def base_theme():
-    bpm = 100
+    """Sertão baião in D mixolydian, 104 BPM – banda de pífanos lead over sanfona, zabumba & triangle.
+    Three synchronised stems (same length) so the runtime can raise intensity:
+      music_base          calm bed: zabumba baião, triangle, bass, sanfona offbeat chords, pífano melody
+      music_base_tension  near-miss / anticipation: tremolo strings, shaker 16ths, low drone, heartbeat zabumba
+      music_base_drive    bonus hit: doubled zabumba, taiko, brass stabs, fife harmony an octave up
+    """
+    bpm = 104
     beat = 60 / bpm
     bar = beat * 4
     bars = 16
     L = bar * bars
-    bed = buf(L)
-    tension = buf(L)
-    chords = ['G', 'G', 'F', 'G', 'C', 'C', 'D7', 'G'] * 2
-    CH = {'G': ['G3', 'B3', 'D4', 'G4'], 'F': ['F3', 'A3', 'C4', 'F4'], 'C': ['C3', 'E3', 'G3', 'C4'], 'D7': ['D3', 'F#3', 'A3', 'C4'], 'Am': ['A3', 'C4', 'E4', 'A4']}
-    ROOTS = {'G': 'G2', 'F': 'F2', 'C': 'C2', 'D7': 'D2'}
+    bed, tension, drive = buf(L), buf(L), buf(L)
     s16 = beat / 4
+    prog = ['D', 'D', 'C', 'D', 'G', 'G', 'A7', 'D', 'D', 'D', 'C', 'D', 'G', 'A7', 'D', 'D']
+    CH = {'D': ['D4', 'F#4', 'A4'], 'C': ['C4', 'E4', 'G4'], 'G': ['G3', 'B3', 'D4'], 'A7': ['A3', 'C#4', 'E4', 'G4']}
+    ROOT = {'D': 'D2', 'C': 'C2', 'G': 'G2', 'A7': 'A2'}
     for b in range(bars):
         t0 = b * bar
-        ch = chords[b]
-        for cell in range(2):  # two baião cells (2/4) per 4/4 bar
+        ch = prog[b]
+        r = n2m(ROOT[ch])
+        for cell in range(2):  # baião cell per half bar
             c0 = t0 + cell * beat * 2
-            place(bed, S.zabumba(1.0), c0, 0.9, -0.05)
-            place(bed, S.zabumba(0.75, pitch=1.05), c0 + 3 * s16, 0.75, -0.05)
-            if (b + cell) % 2 == 1:
-                place(bed, S.zabumba(0.55, pitch=1.1), c0 + 6 * s16, 0.5, -0.05)
-            for st in [2, 4, 6, 7]:
-                place(bed, S.bacalhau(0.5 if st != 4 else 0.7), c0 + st * s16, 0.6, 0.15)
+            place(bed, S.zabumba(1.0), c0, 0.85, -0.05)
+            place(bed, S.zabumba(0.7, pitch=1.06), c0 + 3 * s16, 0.7, -0.05)
+            place(bed, S.bacalhau(0.6), c0 + 2 * s16, 0.55, 0.12)
+            place(bed, S.bacalhau(0.7), c0 + 6 * s16, 0.6, 0.12)
             for st in range(8):
-                place(bed, S.triangle_hit(open_=st in (2, 6), vel=0.6 if st % 2 else 0.4), c0 + st * s16, 0.8, 0.45)
-            # bass: root + fifth
-            r = n2m(ROOTS[ch])
-            place(bed, S.bass(r, beat * 1.4), c0, 0.9, 0)
-            place(bed, S.bass(r + 7, beat * 0.5), c0 + 3 * s16, 0.6, 0)
-            place(bed, S.bass(r + 12 if cell else r, beat * 0.5), c0 + 6 * s16, 0.55, 0)
-            # viola strums on offbeats
-            notes = [n2m(x) for x in CH[ch]]
-            place(bed, S.strum(notes, beat * 0.7, 0.45, up=False), c0 + 2 * s16, 0.5, -0.35)
-            place(bed, S.strum(notes, beat * 0.5, 0.35, up=True), c0 + 6 * s16, 0.4, -0.35)
-        # tension layer: tremolo strings + shaker 16ths
-        notes = [n2m(x) + 12 for x in CH[ch][1:]]
-        for k in range(16):
-            place(tension, S.shaker(0.5 if k % 2 else 0.8), t0 + k * s16, 0.8, 0.3)
-        for m in notes:
-            st = S.strings(m, bar + 0.3, 0.55, attack=0.3)
-            trem = 0.6 + 0.4 * np.sin(2 * np.pi * 12 * np.arange(len(st)) / SR)
-            place(tension, st * trem, t0, 0.9, -0.2 + 0.2 * (m % 3))
-        place(tension, S.strings(n2m(ROOTS[ch]), bar + 0.3, 0.6, attack=0.5, fc=900), t0, 0.9, 0)
-        if b % 2 == 1:
-            place(tension, S.taiko(0.6, pitch=1.3), t0 + 3 * beat, 0.45, 0)
-
-    # accordion melody (beats offset, duration in beats, note)
-    A = [[(0, .75, 'D5'), (.75, .25, 'D5'), (1, .5, 'B4'), (1.5, .5, 'D5'), (2, 1, 'G5'), (3, .5, 'F5'), (3.5, .5, 'E5')],
-         [(0, 1.5, 'D5'), (1.5, .5, 'B4'), (2, .5, 'C5'), (2.5, .5, 'B4'), (3, 1, 'A4')],
-         [(0, .75, 'C5'), (.75, .25, 'C5'), (1, .5, 'A4'), (1.5, .5, 'C5'), (2, 1, 'F5'), (3, .5, 'E5'), (3.5, .5, 'D5')],
-         [(0, 1.5, 'B4'), (1.5, .5, 'G4'), (2, .5, 'A4'), (2.5, .5, 'B4'), (3, 1, 'G4')]]
-    B = [[(0, .5, 'E5'), (.5, .5, 'G5'), (1, .5, 'E5'), (1.5, .5, 'C5'), (2, .75, 'E5'), (2.75, .25, 'F5'), (3, .5, 'E5'), (3.5, .5, 'D5')],
-         [(0, 1, 'C5'), (1, .5, 'E5'), (1.5, .5, 'G5'), (2, 1.5, 'A5')],
-         [(0, .5, 'A5'), (.5, .5, 'G5'), (1, .5, 'F#5'), (1.5, .5, 'E5'), (2, .5, 'D5'), (2.5, .5, 'C5'), (3, 1, 'A4')],
-         [(0, .75, 'B4'), (.75, .25, 'C5'), (1, .5, 'D5'), (1.5, .5, 'B4'), (2, 2, 'G4')]]
+                place(bed, S.triangle_hit(open_=st in (2, 6), vel=0.55 if st % 2 else 0.35), c0 + st * s16, 0.75, 0.45)
+            place(bed, S.bass(r, beat * 1.3), c0, 0.85, 0)
+            place(bed, S.bass(r + 7, beat * 0.5), c0 + 3 * s16, 0.55, 0)
+            place(bed, S.bass(r + 12, beat * 0.5), c0 + 6 * s16, 0.5, 0)
+            # sanfona offbeat chord pumps
+            for o in (2, 6):
+                for nn in CH[ch]:
+                    place(bed, S.accordion(n2m(nn), s16 * 1.6, 0.42, bright=0.8), c0 + o * s16, 0.45, -0.25)
+            # tension: shaker 16ths + heartbeat
+            for st in range(8):
+                place(tension, S.shaker(0.8 if st % 2 else 0.45), c0 + st * s16, 0.7, 0.3)
+            place(tension, S.zabumba(0.7, 0.3, pitch=0.7), c0, 0.8, 0)
+            place(tension, S.zabumba(0.45, 0.3, pitch=0.75), c0 + 0.16, 0.6, 0)
+            # drive: doubled zabumba on every 8th + taiko on 1, brass stabs offbeats
+            for st in (0, 2, 3, 4, 6):
+                place(drive, S.zabumba(0.9, 0.3, pitch=1.15), c0 + st * s16, 0.6, 0.1)
+            place(drive, S.taiko(0.8, 0.9, 1.1), c0, 0.55, 0)
+            for nn in CH[ch]:
+                place(drive, S.brass(n2m(nn) + 12, s16 * 1.5, 0.75), c0 + 2 * s16, 0.4, 0.25)
+                place(drive, S.brass(n2m(nn) + 12, s16 * 1.5, 0.8), c0 + 6 * s16, 0.45, 0.25)
+        # tension: tremolo strings + drone (bar-long)
+        for nn in CH[ch]:
+            st_ = S.strings(n2m(nn) + 12, bar + 0.25, 0.5, attack=0.25)
+            trem = 0.55 + 0.45 * np.sin(2 * np.pi * 13 * np.arange(len(st_)) / SR)
+            place(tension, st_ * trem, t0, 0.75, -0.2)
+        place(tension, S.drone(r + 12, bar + 0.2, 0.6), t0, 0.7, 0)
+        if b % 4 == 3:
+            place(tension, S.whoosh(bar * 0.9, 200, 5000, 0.35), t0 + bar * 0.1, 0.6, 0)
+            place(drive, S.anvil(0.5), t0 + 3.5 * beat, 0.4, 0.4)
+    # pífano melody (beat offset, beats, note) – call (A) and answer (B), D mixolydian
+    A = [[(0, .5, 'A5'), (.5, .5, 'B5'), (1, .75, 'C6'), (1.75, .25, 'B5'), (2, 1, 'A5'), (3, .5, 'F#5'), (3.5, .5, 'A5')],
+         [(0, 1.5, 'G5'), (1.5, .5, 'F#5'), (2, 1, 'E5'), (3, 1, 'D5')],
+         [(0, .5, 'E5'), (.5, .5, 'G5'), (1, .75, 'C6'), (1.75, .25, 'B5'), (2, 1, 'G5'), (3, .5, 'E5'), (3.5, .5, 'G5')],
+         [(0, 1, 'F#5'), (1, .5, 'E5'), (1.5, .5, 'F#5'), (2, 2, 'D5')]]
+    B = [[(0, .25, 'D6'), (.25, .25, 'C6'), (.5, .5, 'A5'), (1, .5, 'C6'), (1.5, .5, 'A5'), (2, .5, 'G5'), (2.5, .5, 'F#5'), (3, 1, 'G5')],
+         [(0, .5, 'B5'), (.5, .5, 'A5'), (1, .5, 'G5'), (1.5, .5, 'B5'), (2, 2, 'A5')],
+         [(0, .5, 'C#6'), (.5, .5, 'B5'), (1, .5, 'A5'), (1.5, .5, 'G5'), (2, .5, 'E5'), (2.5, .5, 'G5'), (3, 1, 'C#6')],
+         [(0, .75, 'D6'), (.75, .25, 'C6'), (1, .5, 'A5'), (1.5, .5, 'F#5'), (2, 2, 'D5')]]
     melody = A + B + A + B
     for b, notes in enumerate(melody):
         for (o, d, nn) in notes:
             m = n2m(nn)
-            vel = 0.85 if b < 8 else 0.95
-            place(bed, S.accordion(m, d * beat * 0.95, vel), b * bar + o * beat, 0.9, 0.1)
-            if b >= 8:  # harmony a sixth below in second half (thirds of the chord)
-                place(bed, S.accordion(m - 9 if (m % 12) in (2, 11, 7) else m - 8, d * beat * 0.95, 0.5, bright=0.7), b * bar + o * beat, 0.5, -0.1)
-    bed = S.master(S.reverb_loop(bed, HALL, 0.18))
-    tension = S.master(S.reverb_loop(tension, HALL, 0.3), peak_db=-3)
-    encode('music_base', bed, loop=True)
-    encode('music_base_tension', tension, loop=True)
+            place(bed, S.pifano(m, d * beat * 0.92, 0.85), b * bar + o * beat, 0.95, 0.12)
+            # second fife a third below in the answer phrases (classic two-pífano harmony)
+            if b % 8 >= 4:
+                place(bed, S.pifano(m - 4 if (m % 12) in (2, 4, 9, 11) else m - 3, d * beat * 0.92, 0.55), b * bar + o * beat, 0.6, -0.15)
+            # drive: fife doubled an octave up + accordion unison
+            place(drive, S.pifano(m + 12, d * beat * 0.9, 0.5, breath=0.25), b * bar + o * beat, 0.45, 0.2)
+            place(drive, S.accordion(m, d * beat * 0.92, 0.7, bright=1.1), b * bar + o * beat, 0.5, -0.1)
+    encode('music_base', S.master(S.reverb_loop(bed, HALL, 0.2)), loop=True)
+    encode('music_base_tension', S.master(S.reverb_loop(tension, HALL, 0.3), peak_db=-3), loop=True)
+    encode('music_base_drive', S.master(S.reverb_loop(drive, ROOM, 0.22), peak_db=-2), loop=True)
 
 
 # ======================================================================== ESCAPE
@@ -388,6 +401,9 @@ if __name__ == '__main__':
     only = sys.argv[1:]
     if os.path.exists(os.path.join(OUT, 'manifest.json')):
         MANIFEST.update(json.load(open(os.path.join(OUT, 'manifest.json'))))
+    if 'base' in only:
+        print('music (base only):')
+        base_theme()
     if not only or 'music' in only:
         print('music:')
         base_theme()
