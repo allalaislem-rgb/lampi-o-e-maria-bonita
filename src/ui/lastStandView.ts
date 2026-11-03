@@ -1,7 +1,7 @@
 /**
  * LastStandView – dedicated 5×3 Hold & Respin grid.
  */
-import { Container, Sprite } from 'pixi.js';
+import { Container, Sprite, Ticker } from 'pixi.js';
 import gsap from 'gsap';
 import type { LSCell, RespinResult } from '../engine/features/lastStand';
 import { tex } from './assets';
@@ -111,21 +111,31 @@ export class LastStandView extends Container {
   async play(result: RespinResult, bet: number, turbo: boolean) {
     sound.play('respin');
     const empty = this.slots.filter((s) => !s.cell);
-    let alive = true;
-    const flick = () => {
-      if (!alive) return;
-      for (const s of empty) {
-        s.ghost.texture = tex(GHOSTS[Math.floor(Math.random() * GHOSTS.length)]);
-        s.ghost.scale.set(80 / s.ghost.texture.height);
-        s.ghost.alpha = 0.1 + Math.random() * 0.18;
-        s.ghost.y = (Math.random() - 0.5) * 70;
+    // smooth spin in every empty cell: a ghost symbol scrolls down continuously (ticker-driven, no texture jitter)
+    const dur = turbo ? 0.32 : 0.7;
+    const t0 = performance.now();
+    for (const s of empty) {
+      s.ghost.texture = tex(GHOSTS[Math.floor(Math.random() * GHOSTS.length)]);
+      s.ghost.scale.set(80 / s.ghost.texture.height);
+      s.ghost.visible = true;
+    }
+    const spin = () => {
+      const k = (performance.now() - t0) / 1000;
+      const ease = Math.min(1, k / 0.12) * Math.min(1, Math.max(0, (dur - k) / 0.15)); // fade in / out
+      for (const [i, s] of empty.entries()) {
+        const p = (k * 6 + i * 0.37) % 1; // one symbol pass every ~0.17 s
+        s.ghost.y = -70 + p * 140;
+        s.ghost.alpha = 0.28 * ease * Math.sin(p * Math.PI);
+        if (p < 0.06 && Math.random() < 0.5) s.ghost.texture = tex(GHOSTS[(i + Math.floor(k * 6)) % GHOSTS.length]);
       }
-      gsap.delayedCall(0.06, flick);
     };
-    flick();
-    await wait(turbo ? 320 : 700);
-    alive = false;
-    for (const s of empty) s.ghost.alpha = 0;
+    Ticker.shared.add(spin);
+    await wait(dur * 1000);
+    Ticker.shared.remove(spin);
+    for (const s of empty) {
+      s.ghost.alpha = 0;
+      s.ghost.visible = false;
+    }
 
     for (const [k, l] of result.landed.entries()) {
       await wait(turbo ? 60 : 150);

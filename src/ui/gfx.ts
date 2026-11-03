@@ -1,7 +1,7 @@
 /**
  * Shared texture accessors and text styles.
  */
-import { BitmapText, FillGradient, Text, TextStyle, type Texture } from 'pixi.js';
+import { BitmapText, Container, FillGradient, Sprite, Text, TextStyle, Ticker, type Texture } from 'pixi.js';
 import gsap from 'gsap';
 import { tex, seq } from './assets';
 
@@ -116,4 +116,57 @@ export function destroyDeep(c: import('pixi.js').Container) {
   };
   walk(c);
   c.destroy({ children: true });
+}
+
+/**
+ * Smooth flipbook: cross-fades between neighbouring frames every display frame, so a 24-frame
+ * painted sequence plays without visible pose jumps at 60 FPS. `fps` is source frames per second.
+ */
+export class FrameBlend extends Container {
+  a: Sprite;
+  b: Sprite;
+  pos = 0;
+  playing = false;
+  onFrame: (f: number) => void = () => {};
+  onDone: () => void = () => {};
+  private lastFrame = -1;
+  constructor(public frames: Texture[], public fps = 16, anchorX = 0.5, anchorY = 0.5) {
+    super();
+    this.a = new Sprite(frames[0]);
+    this.b = new Sprite(frames[Math.min(1, frames.length - 1)]);
+    this.a.anchor.set(anchorX, anchorY);
+    this.b.anchor.set(anchorX, anchorY);
+    this.b.alpha = 0;
+    this.addChild(this.a, this.b);
+    Ticker.shared.add(this.tick, this);
+  }
+  get frameHeight() {
+    return this.frames[0].height;
+  }
+  play() {
+    this.playing = true;
+  }
+  private tick(t: Ticker) {
+    if (!this.playing) return;
+    const last = this.frames.length - 1;
+    this.pos = Math.min(last, this.pos + (t.deltaMS / 1000) * this.fps);
+    const i = Math.floor(this.pos);
+    const f = this.pos - i;
+    this.a.texture = this.frames[i];
+    this.b.texture = this.frames[Math.min(last, i + 1)];
+    // ease the blend so each pose holds a moment before dissolving into the next
+    this.b.alpha = f * f * (3 - 2 * f);
+    if (i !== this.lastFrame) {
+      this.lastFrame = i;
+      this.onFrame(i);
+    }
+    if (this.pos >= last) {
+      this.playing = false;
+      this.onDone();
+    }
+  }
+  override destroy(opts?: Parameters<Container['destroy']>[0]) {
+    Ticker.shared.remove(this.tick, this);
+    super.destroy(opts);
+  }
 }

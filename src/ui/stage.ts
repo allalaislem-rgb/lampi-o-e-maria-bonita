@@ -2,7 +2,7 @@
  * Stage – Pixi application, responsive layout, cinematic transitions,
  * bonus intro sequences, random-event banners and tiered win celebrations.
  */
-import { AnimatedSprite, Application, Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Text } from 'pixi.js';
 import gsap from 'gsap';
 import { Environment } from './environment';
 import { FX } from './fx';
@@ -11,7 +11,7 @@ import { HideoutView } from './hideoutView';
 import { LastStandView } from './lastStandView';
 import { InfoBar } from './infoBar';
 import { tex, seq } from './assets';
-import { goldText, plainText, T, FONT_TITLE, destroyDeep } from './gfx';
+import { goldText, plainText, T, FONT_TITLE, destroyDeep, FrameBlend } from './gfx';
 import { sound } from '../audio/sound';
 
 /** World design bounds (reel window is 0..1000 × 0..540, frame extends to -60..1060 × -110..600). */
@@ -208,7 +208,7 @@ export class Stage {
       for (let i = 0; i < 40; i++) this.sfx.spawn(T.dot(), this.w / 2 + (Math.random() - 0.5) * unit, this.h / 2 + (Math.random() - 0.5) * unit * 0.6, { vy: -20 - Math.random() * 30, life: 2.2, scale: 0.4 + Math.random(), add: true, tint: 0xffd890, fadeIn: 0.6, alpha: 0.7 });
       await wait(650);
       title = this.titleSlam('card_hideout2', this.h * 0.47, this.w * 0.6);
-      this.characterCameo('mariaa_', 24, -1, 0.62);
+      this.characterCameo('mariaa_', 24, -1, 0.5);
     } else {
       sound.play('intro_last');
       this.env.lightning();
@@ -219,7 +219,7 @@ export class Stage {
       for (let i = 0; i < 4; i++) gsap.delayedCall(0.3 + i * 0.15, () => this.sfx.embers(0, this.h, this.w, 25, 0xff6a1a));
       await wait(1100);
       title = this.titleSlam('card_last2', this.h * 0.47, this.w * 0.6);
-      this.characterCameo('lampa_', 24, 1, 0.62);
+      this.characterCameo('lampa_', 24, 1, 0.5);
       gsap.delayedCall(0.38, () => {
         this.shake(22, 0.6);
         this.sfx.ring(this.w / 2, this.h * 0.45, unit / 120, 0xff8040);
@@ -255,27 +255,21 @@ export class Stage {
 
   /** Character slides in beside the title and plays its painted frame loop. */
   private characterCameo(prefix: string, n: number, side: 1 | -1, size = 0.6) {
-    const frames = seq(prefix, n);
-    const s = new AnimatedSprite(frames);
-    s.anchor.set(0.5, 1);
-    s.loop = false;
-    s.animationSpeed = 0.3;
-    const k = (Math.min(this.w, this.h) * size) / frames[0].height;
+    const s = new FrameBlend(seq(prefix, n), 15, 0.5, 1);
+    const k = (Math.min(this.w, this.h) * size) / s.frameHeight;
     s.scale.set(k);
-    const tx = this.w / 2 + side * Math.min(this.w * 0.33, this.w / 2 - s.width * 0.42);
+    const half = (s.frames[0].width * k) / 2;
+    const tx = this.w / 2 + side * Math.min(this.w * 0.33, this.w / 2 - half * 0.85);
     s.position.set(tx + side * this.w * 0.4, this.h * 0.99);
     this.screen.addChild(s);
     gsap.to(s, { x: tx, duration: 0.45, ease: 'back.out(1.2)', onComplete: () => s.play() });
-    // shots on the two muzzle-flash frames (9 and 13)
-    let fired = 0;
-    s.onFrameChange = (f) => {
-      if ((f === 9 || f === 13) && fired < 2) {
-        fired++;
+    s.onFrame = (f) => {
+      if (f === 9 || f === 13) {
         sound.play('gunshot', { gain: 0.6 });
         this.shake(8, 0.2);
       }
     };
-    gsap.delayedCall(3.2, () => void gsap.to(s, { x: tx + side * this.w * 0.4, alpha: 0, duration: 0.4, ease: 'power2.in', onComplete: () => destroyDeep(s) }));
+    gsap.delayedCall(2.4 + n / 15, () => void gsap.to(s, { x: tx + side * this.w * 0.4, alpha: 0, duration: 0.4, ease: 'power2.in', onComplete: () => destroyDeep(s) }));
   }
 
   // ----------------------------------------------------------- banners
@@ -310,24 +304,22 @@ export class Stage {
       layer.addChild(rays);
       gsap.to(rays, { rotation: 1.4, duration: 2.6 });
       // Lampião draws, aims and fires twice (client 24-frame sequence)
-      const lamp = new AnimatedSprite(seq('lampa_', 24));
-      lamp.anchor.set(0.5, 0.55);
-      lamp.loop = false;
-      lamp.animationSpeed = 0.32;
-      const k = (unit * 0.55) / lamp.texture.height;
+      const lamp = new FrameBlend(seq('lampa_', 24), 16, 0.5, 0.55);
+      const k = (unit * 0.55) / lamp.frameHeight;
       lamp.scale.set(k);
-      lamp.position.set(-lamp.width, this.h * 0.6);
+      const lw = lamp.frames[0].width * k;
+      lamp.position.set(-lw, this.h * 0.6);
       layer.addChild(lamp);
       await gsap.to(lamp, { x: this.w / 2, duration: 0.45, ease: 'back.out(1.3)' });
-      lamp.onFrameChange = (f) => {
+      lamp.onFrame = (f) => {
         if (f === 9 || f === 13) {
           sound.play(f === 9 ? 'arrival' : 'gunshot');
           this.shake(14, 0.25);
-          this.sfx.sparkBurst(lamp.x + lamp.width * 0.3, lamp.y - lamp.height * 0.05, 20, 420);
+          this.sfx.sparkBurst(lamp.x + lw * 0.3, lamp.y - lamp.frameHeight * k * 0.05, 20, 420);
         }
       };
       await new Promise<void>((res) => {
-        lamp.onComplete = () => res();
+        lamp.onDone = () => res();
         lamp.play();
       });
       await wait(250);

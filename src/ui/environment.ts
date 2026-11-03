@@ -22,13 +22,14 @@ export type Theme = 'base' | 'escape' | 'hideout' | 'laststand';
 
 /** Lantern glow positions in each picture's own pixel space. */
 const LANTERNS: Record<Theme, { x: number; y: number; s?: number }[]> = {
-  base: [{ x: 497, y: 368 }, { x: 548, y: 368 }, { x: 617, y: 372 }, { x: 1708, y: 352 }, { x: 1938, y: 318 }],
-  escape: [],
-  hideout: [{ x: 623, y: 211, s: 1.4 }, { x: 1500, y: 153, s: 1.6 }, { x: 867, y: 326 }, { x: 953, y: 575, s: 1.5 }],
-  laststand: [{ x: 172, y: 216, s: 1.3 }],
+  // positions in the 1920×1080 backgrounds (client pack v8)
+  base: [{ x: 486, y: 582 }, { x: 538, y: 582 }, { x: 602, y: 589 }, { x: 1651, y: 544 }, { x: 1894, y: 544 }],
+  escape: [{ x: 77, y: 518, s: 1.3 }, { x: 1824, y: 336, s: 1.3 }],
+  hideout: [{ x: 300, y: 230, s: 1.2 }, { x: 499, y: 202 }, { x: 1669, y: 245 }, { x: 1834, y: 182, s: 1.3 }, { x: 1764, y: 614, s: 1.5 }],
+  laststand: [{ x: 121, y: 505, s: 1.4 }, { x: 175, y: 322 }, { x: 629, y: 339 }],
 };
-/** How much of the screen height the sharp picture must cover (panoramas are anchored to the bottom). */
-const COVER: Record<Theme, number> = { base: 0.78, escape: 1, hideout: 1, laststand: 0.8 };
+/** All backgrounds are 16:9 and cover the full screen. */
+const COVER: Record<Theme, number> = { base: 1, escape: 1, hideout: 1, laststand: 1 };
 const MOTES: Record<Theme, number> = { base: 22, escape: 18, hideout: 26, laststand: 34 };
 
 interface Mote { s: Sprite; vx: number; vy: number; ph: number }
@@ -55,7 +56,7 @@ class Scene extends Container {
     this.fill = new Sprite(tex(`bgv_${theme}_fill`));
     this.fill.anchor.set(0.5);
     this.pic = new Sprite(tex(`bgv_${theme}`));
-    this.pic.anchor.set(0.5, 1);
+    this.pic.anchor.set(0.5, 0.5);
     this.addChild(this.fill, this.pic, this.riderLayer);
     for (const l of LANTERNS[theme]) {
       const g = new Sprite(T.glow());
@@ -153,7 +154,7 @@ class Scene extends Container {
     const ft = this.fill.texture;
     this.fill.scale.set(Math.max(w / ft.width, h / ft.height) * 1.06);
     const pt = this.pic.texture;
-    this.k = Math.max(w / pt.width, (h * COVER[this.theme]) / pt.height) * 1.02;
+    this.k = Math.max(w / pt.width, (h * COVER[this.theme]) / pt.height) * 1.03;
     this.pic.scale.set(this.k);
     this.flash.clear().rect(0, 0, w, h).fill(0xfff0ff);
     this.place();
@@ -166,11 +167,11 @@ class Scene extends Container {
 
   private place() {
     const pan = Math.sin(this.t * (this.theme === 'escape' ? 0.3 : 0.08)) * (this.theme === 'escape' ? 10 : 5);
-    this.pic.position.set(this.w / 2 - this.px * 12 + pan, this.h + 4 - this.py * 5);
+    this.pic.position.set(this.w / 2 - this.px * 12 + pan, this.h / 2 - this.py * 5);
     this.fill.position.set(this.w / 2 - this.px * 5, this.h / 2);
     const pt = this.pic.texture;
     for (const l of this.lanterns) {
-      l.g.position.set(this.pic.x + (l.x - pt.width / 2) * this.k, this.pic.y + (l.y - pt.height) * this.k);
+      l.g.position.set(this.pic.x + (l.x - pt.width / 2) * this.k, this.pic.y + (l.y - pt.height / 2) * this.k);
     }
   }
 

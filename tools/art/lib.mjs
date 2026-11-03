@@ -109,16 +109,16 @@ export function starPts(cx, cy, n, r1, r2, rot = -Math.PI / 2) {
   return p.join(' ');
 }
 
-/** Hexagram (Signo de Salomão), as two triangles path. */
+/** Five-pointed sertão star (closed path). Kept under the old name so every caller switches over;
+ *  the game deliberately uses no six-pointed stars. */
 export function hexagram(cx, cy, r) {
-  const tri = (rot) => {
-    const pts = [0, 1, 2].map((i) => {
-      const a = rot + (i * 2 * Math.PI) / 3;
-      return `${(cx + Math.cos(a) * r).toFixed(2)},${(cy + Math.sin(a) * r).toFixed(2)}`;
-    });
-    return `M${pts[0]} L${pts[1]} L${pts[2]} Z`;
-  };
-  return tri(-Math.PI / 2) + ' ' + tri(Math.PI / 2);
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const rr = i % 2 ? r * 0.42 : r;
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    pts.push(`${(cx + Math.cos(a) * rr).toFixed(2)},${(cy + Math.sin(a) * rr).toFixed(2)}`);
+  }
+  return `M${pts.join(' L')} Z`;
 }
 
 export const rnd = (() => {

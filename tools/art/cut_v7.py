@@ -101,12 +101,38 @@ def characters():
 
 
 # ====================================================================== chest
+def isolate(cell):
+    """Keep only this cell's chest (largest blob) plus coins / sparkles near it; drop any slice of the
+    neighbouring chest that leaks in from the left or right edge of the grid cell."""
+    a = np.asarray(cell).copy()
+    fg = a[..., 3] > 20
+    lab, n = nd.label(nd.binary_dilation(fg, iterations=1))
+    if n == 0:
+        return cell
+    sizes = nd.sum(fg, lab, range(1, n + 1))
+    main = int(np.argmax(sizes)) + 1
+    W = a.shape[1]
+    keep = np.zeros(fg.shape, bool)
+    for i in range(1, n + 1):
+        comp = lab == i
+        xs = np.nonzero(comp.any(0))[0]
+        touches_side = xs[0] <= 1 or xs[-1] >= W - 2
+        if i == main or (not touches_side and sizes[i - 1] < sizes.max() * 0.25):
+            keep |= comp
+    # the main blob itself may have absorbed a neighbour sliver joined at the very edge: cut a 6px side margin
+    margin = np.zeros(fg.shape, bool)
+    margin[:, :6] = True
+    margin[:, -6:] = True
+    keep &= ~margin
+    a[..., 3] = np.where(nd.binary_dilation(keep, iterations=2), a[..., 3], 0)
+    return Image.fromarray(a, 'RGBA')
+
 def chest():
     im = src('in_14.webp').convert('RGBA')
     W = im.width
     row1 = grid(im, 8, 1, (0, 0, W, 250))
     row2 = grid(im, 8, 1, (0, 250, W, 540))
-    frames = trim_common(row1 + row2)
+    frames = trim_common([isolate(f) for f in row1 + row2])
     for i, f in enumerate(frames):
         save_png(f'chesta_{i}', f)
     # coins + sparkles: segment the bottom strip by alpha columns
@@ -136,29 +162,22 @@ def grade(im, theme):
     if theme == 'base':
         im = ImageEnhance.Brightness(im).enhance(0.92)
     elif theme == 'laststand':
-        im = ImageEnhance.Brightness(im).enhance(0.86)
+        im = ImageEnhance.Brightness(im).enhance(0.92)
     elif theme == 'hideout':
         im = ImageEnhance.Brightness(im).enhance(0.9)
     return im
 
 
 def backgrounds():
-    b13 = src('in_13.webp').convert('RGB')
-    panels = {
-        'base': src('in_6.webp').convert('RGB'),
-        'escape': b13.crop((0, 0, 834, 469)),
-        'hideout': b13.crop((838, 0, 1672, 469)),
-        'laststand': b13.crop((0, 472, 1672, 941)),
-    }
-    for theme, im in panels.items():
-        g = grade(im, theme)
-        if g.width < 1600:  # the bonus panels are small – upscale with sharpening
-            k = 1600 / g.width
-            g = g.resize((1600, round(g.height * k)), Image.LANCZOS).filter(ImageFilter.UnsharpMask(2, 60, 2))
+    """Client full-screen 16:9 backgrounds (pack v8) → 1920×1080, plus a tiny blurred fill."""
+    panels = {'base': 'in_19.webp', 'escape': 'in_17.webp', 'hideout': 'in_16.webp', 'laststand': 'in_18.webp'}
+    for theme, f in panels.items():
+        g = grade(src(f), theme).resize((1920, 1080), Image.LANCZOS)
+        if src(f).width < 1920:
+            g = g.filter(ImageFilter.UnsharpMask(1.6, 50, 2))
         save_webp(f'bgv_{theme}', g, 84)
-        fill = g.resize((240, round(240 * g.height / g.width)), Image.LANCZOS).filter(ImageFilter.GaussianBlur(6))
-        fill = ImageEnhance.Brightness(fill).enhance(0.8)
-        save_webp(f'bgv_{theme}_fill', fill, 80)
+        fill = g.resize((192, 108), Image.LANCZOS).filter(ImageFilter.GaussianBlur(4))
+        save_webp(f'bgv_{theme}_fill', ImageEnhance.Brightness(fill).enhance(0.8), 80)
         print('bg', theme, g.size)
 
 
