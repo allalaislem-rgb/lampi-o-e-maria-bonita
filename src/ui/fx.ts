@@ -34,7 +34,7 @@ export interface SpawnOpts {
 export class FX extends Container {
   private ps: P[] = [];
   private pool: Sprite[] = [];
-  maxParticles = 900;
+  maxParticles = 360;
 
   constructor() {
     super();

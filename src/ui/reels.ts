@@ -39,6 +39,7 @@ export class SymbolView extends Container {
     this.glow.anchor.set(0.5);
     this.glow.blendMode = 'add';
     this.glow.alpha = 0;
+    this.glow.visible = false;
     this.glow.scale.set(2.3, 2.1);
     this.glow.tint = 0xffc850;
     this.sprite = new Sprite();
@@ -50,7 +51,8 @@ export class SymbolView extends Container {
     this.shine.alpha = 0;
     this.shine.rotation = 0.35;
     this.shine.scale.set(1.2, 1.1);
-    this.shine.mask = this.shineMask;
+    this.shine.visible = false;
+    this.shineMask.visible = false;
     // painted glowing card frame (art sheet) – animates in around winning symbols
     this.frameFx = new NineSliceSprite({ texture: tex('glowcard_7'), leftWidth: 34, rightWidth: 34, topHeight: 34, bottomHeight: 34, width: CELL_W + 6, height: CELL_H + 6 });
     this.frameFx.pivot.set((CELL_W + 6) / 2, (CELL_H + 6) / 2);
@@ -78,7 +80,10 @@ export class SymbolView extends Container {
     this.scale.set(1);
     this.rotation = 0;
     this.glow.alpha = 0;
+    this.glow.visible = false;
     this.shine.alpha = 0;
+    this.shine.visible = false;
+    this.shine.mask = null;
     this.frameAnim?.kill();
     this.frameAnim = null;
     this.frameFx.visible = false;
@@ -103,13 +108,23 @@ export class SymbolView extends Container {
   }
   /** Shine band sweeping across the symbol. */
   sweep(delay = 0, dur = 0.7) {
-    gsap.fromTo(this.shine, { x: -CELL_W * 0.9, alpha: 0.95 }, { x: CELL_W * 0.9, duration: dur, delay, ease: 'power2.inOut', onComplete: () => void (this.shine.alpha = 0) });
+    this.shine.mask = this.shineMask;
+    gsap.fromTo(this.shine, { x: -CELL_W * 0.9, alpha: 0.95 }, {
+      x: CELL_W * 0.9, duration: dur, delay, ease: 'power2.inOut',
+      onStart: () => void (this.shine.visible = true),
+      onComplete: () => {
+        this.shine.alpha = 0;
+        this.shine.visible = false;
+        this.shine.mask = null;
+      },
+    });
   }
   /** Per-kind win animation. */
   celebrate(strong = false) {
     const id = this.id;
     const base = { x: this.sprite.scale.x, y: this.sprite.scale.y };
     this.sprite.tint = 0xffffff;
+    this.glow.visible = true;
     gsap.to(this.glow, { alpha: strong ? 0.95 : 0.7, duration: 0.25 });
     this.igniteFrame();
     if (isPortrait(id)) {
@@ -389,6 +404,7 @@ export class ReelsView extends Container {
               sound.play(n >= 3 ? 'scatter3' : n === 2 ? 'scatter2' : 'scatter1');
               const v2 = reel.viewAt(scat);
               gsap.fromTo(v2.scale, { x: 1.4, y: 1.4 }, { x: 1, y: 1, duration: 0.55, ease: 'back.out(3)' });
+              v2.glow.visible = true;
               gsap.fromTo(v2.glow, { alpha: 1 }, { alpha: 0.35, duration: 1.2 });
               const p = this.g(r, scat);
               this.fx.ring(p.x, p.y, 1.1, 0xffd36b);
@@ -398,6 +414,7 @@ export class ReelsView extends Container {
             if (wild >= 0) {
               const v2 = reel.viewAt(wild);
               v2.sweep(0.05, 0.6);
+              v2.glow.visible = true;
               gsap.fromTo(v2.glow, { alpha: 0.9 }, { alpha: 0.25, duration: 1 });
               sound.play('wild', { gain: 0.55 });
             }
@@ -665,6 +682,7 @@ export class ReelsView extends Container {
   async celebrateScatters(positions: Pos[]) {
     for (const [r, row] of positions) {
       const v = this.view(r, row);
+      v.glow.visible = true;
       gsap.to(v.glow, { alpha: 1, duration: 0.3 });
       gsap.fromTo(v.scale, { x: 1, y: 1 }, { x: 1.22, y: 1.22, duration: 0.32, yoyo: true, repeat: 3, ease: 'sine.inOut' });
       v.sweep(0.1);

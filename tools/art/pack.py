@@ -95,6 +95,8 @@ def main():
     pack('objects', [(n, load(n)) for n in OBJECTS], max_w=2048)
     chars = [f'lamp_{i}' for i in range(6)] + [f'maria_{i}' for i in range(6)] + [f'glowcard_{i}' for i in range(10)] + [f'ride_{i}' for i in range(24)]
     pack('chars', [(n, load(n)) for n in chars], max_w=2048)
+    anim = [f'lampa_{i}' for i in range(24)] + [f'mariaa_{i}' for i in range(24)] + [f'chesta_{i}' for i in range(16)] + [f'coinb_{i}' for i in range(15)] + [f'sparkb_{i}' for i in range(8)]
+    pack('anim', [(n, load(n)) for n in anim], max_w=2048)
     for n, (mw, q) in STANDALONE.items():
         im = load(n.replace('_lg', ''))
         if im.width > mw:

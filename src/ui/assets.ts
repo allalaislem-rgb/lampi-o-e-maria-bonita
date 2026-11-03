@@ -5,9 +5,10 @@
  */
 import { Assets, Texture, type Spritesheet } from 'pixi.js';
 
-const ATLASES = ['symbols', 'objects', 'chars'];
+const ATLASES = ['symbols', 'objects', 'chars', 'anim'];
 export const STANDALONE = [
-  'logo', 'card_escape', 'card_hideout2', 'card_last2', 'win_big', 'win_mega', 'win_epic', 'bg_painted', 'frame_painted',
+  'logo', 'card_escape', 'card_hideout2', 'card_last2', 'win_big', 'win_mega', 'win_epic', 'frame_painted',
+  ...['base', 'escape', 'hideout', 'laststand'].flatMap((t) => [`bgv_${t}`, `bgv_${t}_fill`]),
 ];
 
 const frames: Record<string, { x: number; y: number; w: number; h: number; sheet: string; sw: number; sh: number }> = {};

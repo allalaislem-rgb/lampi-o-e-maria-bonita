@@ -473,11 +473,11 @@ export class Controller {
           this.hud.setWin(baseWin + res.award, 'TOTAL WIN');
           sound.setIntensity(res.picksLeft === 1 ? 1 : 0);
           if (res.prize.type === 'extraPick') await st.callout('EXTRA PICK!', '+1', 900, ['gold_star']);
-          if (res.prize.type === 'medallion') await st.callout("MARIA'S MEDALLION", 'MULTIPLIER ×2', 1100, ['maria_5']);
-          if (res.prize.type === 'treasure') await st.callout("LAMPIÃO'S TREASURE", money(res.prize.value * bet), 1100, ['lamp_2']);
+          if (res.prize.type === 'medallion') await st.callout("MARIA'S MEDALLION", 'MULTIPLIER ×2', 1100, ['mariaa_0']);
+          if (res.prize.type === 'treasure') await st.callout("LAMPIÃO'S TREASURE", money(res.prize.value * bet), 1100, ['chesta_15']);
           if (res.couplesFortune) {
             sound.play('couple');
-            await st.callout("COUPLE'S FORTUNE!", `+${money(GAME_CONFIG.hideout.couplesFortune * bet)}`, 2200, ['lamp_0', 'heart_gem', 'maria_4']);
+            await st.callout("COUPLE'S FORTUNE!", `+${money(GAME_CONFIG.hideout.couplesFortune * bet)}`, 2200, ['lampa_0', 'heart_gem', 'mariaa_0']);
           }
           if (r.settled) {
             if (res.reveal) await st.hideout.revealRest(res.reveal);
@@ -533,7 +533,7 @@ export class Controller {
         if (res.full) {
           sound.play('grand');
           await st.laststand.celebrateFull();
-          await st.callout('GRAND TREASURE!', money(GAME_CONFIG.lastStand.grandTreasure * bet), 2200, ['chest_treasure', 'emblem_sun', 'chest_treasure']);
+          await st.callout('GRAND TREASURE!', money(GAME_CONFIG.lastStand.grandTreasure * bet), 2200, ['chesta_15', 'emblem_sun', 'chesta_15']);
         } else if (res.capped) await st.callout('MAXIMUM WIN!', '', 1600);
         await wait(600);
         return r.settled;

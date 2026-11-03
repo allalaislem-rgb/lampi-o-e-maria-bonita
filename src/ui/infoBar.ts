@@ -111,9 +111,9 @@ export class CoupleTracker extends Container {
       this.addChild(s);
       return s;
     };
-    this.lamp = mk('lamp_0', -84, 70);
+    this.lamp = mk('lampa_0', -84, 70);
     this.heart = mk('heart_gem', 0, 44);
-    this.maria = mk('maria_0', 84, 70);
+    this.maria = mk('mariaa_0', 84, 70);
   }
   set(t: boolean, m: boolean, both: boolean) {
     const light = (s: Sprite, on: boolean, key: 't' | 'm' | 'h') => {

@@ -35,7 +35,8 @@ export class Stage {
   private logoBase = 1;
 
   async init(parent: HTMLElement) {
-    await this.app.init({ resizeTo: window, background: '#120804', antialias: true, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true, powerPreference: 'high-performance' });
+    await this.app.init({ resizeTo: window, background: '#120804', antialias: false, resolution: Math.min(1.5, window.devicePixelRatio || 1), autoDensity: true, powerPreference: 'high-performance' });
+    this.app.ticker.maxFPS = 60;
     parent.appendChild(this.app.canvas);
     this.app.stage.addChild(this.env, this.world, this.sfx, this.screen);
 
@@ -68,6 +69,10 @@ export class Stage {
   layout() {
     const w = window.innerWidth;
     const h = window.innerHeight;
+    // DOM UI scale – keeps HUD / Buy / dialogs proportional to the canvas at any browser zoom
+    const portraitUi = h > w;
+    const ui = portraitUi ? Math.min(w / 430, h / 930) : Math.min(w / 1600, h / 900);
+    document.documentElement.style.setProperty('--ui', String(Math.max(0.45, Math.min(2.5, ui)).toFixed(4)));
     this.w = w;
     this.h = h;
     this.env.resize(w, h);
@@ -182,23 +187,7 @@ export class Stage {
       for (let i = 0; i < 40; i++) {
         gsap.delayedCall(i * 0.03, () => this.sfx.spawn(T.streak(), this.w + 200, this.h * Math.random(), { vx: -this.w * 2.4, life: 0.7, scale: 1 + Math.random() * 2, sy: 0.6, add: true, tint: 0xffc080, alpha: 0.6 }));
       }
-      // client's painted posse: approach (frames 0–7) then gallop loop (8–23) across the screen
-      const all = seq('ride_', 24);
-      const r = new AnimatedSprite(all);
-      r.anchor.set(0.5, 1);
-      r.animationSpeed = 0.42;
-      r.loop = false;
-      r.scale.set((unit * 0.42) / all[0].height);
-      r.position.set(this.w * 0.08, this.h * 0.94);
-      r.onComplete = () => {
-        r.textures = all.slice(8);
-        r.loop = true;
-        r.gotoAndPlay(0);
-      };
-      r.play();
-      layer.addChild(r);
-      gsap.to(r, { x: this.w * 1.25, duration: 2.6, ease: 'power1.in' });
-      for (let i = 0; i < 6; i++) gsap.delayedCall(0.25 + i * 0.28, () => this.sfx.dustBurst(r.x - r.width * 0.3, this.h * 0.92, 5, 240));
+      this.env.gallop(2); // painted posse rides behind the reel frame
       await wait(700);
       title = this.titleSlam('card_escape', this.h * 0.47, this.w * 0.6);
       gsap.delayedCall(0.4, () => this.shake(14));
@@ -219,7 +208,7 @@ export class Stage {
       for (let i = 0; i < 40; i++) this.sfx.spawn(T.dot(), this.w / 2 + (Math.random() - 0.5) * unit, this.h / 2 + (Math.random() - 0.5) * unit * 0.6, { vy: -20 - Math.random() * 30, life: 2.2, scale: 0.4 + Math.random(), add: true, tint: 0xffd890, fadeIn: 0.6, alpha: 0.7 });
       await wait(650);
       title = this.titleSlam('card_hideout2', this.h * 0.47, this.w * 0.6);
-      this.characterCameo('maria_', 6, -1, 0.75);
+      this.characterCameo('mariaa_', 24, -1, 0.62);
     } else {
       sound.play('intro_last');
       this.env.lightning();
@@ -230,7 +219,7 @@ export class Stage {
       for (let i = 0; i < 4; i++) gsap.delayedCall(0.3 + i * 0.15, () => this.sfx.embers(0, this.h, this.w, 25, 0xff6a1a));
       await wait(1100);
       title = this.titleSlam('card_last2', this.h * 0.47, this.w * 0.6);
-      this.characterCameo('lamp_', 6, 1, 0.75);
+      this.characterCameo('lampa_', 24, 1, 0.62);
       gsap.delayedCall(0.38, () => {
         this.shake(22, 0.6);
         this.sfx.ring(this.w / 2, this.h * 0.45, unit / 120, 0xff8040);
@@ -265,19 +254,28 @@ export class Stage {
   }
 
   /** Character slides in beside the title and plays its painted frame loop. */
-  private characterCameo(prefix: string, n: number, side: 1 | -1, size = 0.7) {
+  private characterCameo(prefix: string, n: number, side: 1 | -1, size = 0.6) {
     const frames = seq(prefix, n);
-    const s = new Sprite(frames[0]);
+    const s = new AnimatedSprite(frames);
     s.anchor.set(0.5, 1);
+    s.loop = false;
+    s.animationSpeed = 0.3;
     const k = (Math.min(this.w, this.h) * size) / frames[0].height;
-    s.scale.set(k * (side < 0 ? 1 : 1), k);
-    const tx = this.w / 2 + side * Math.min(this.w * 0.36, this.w / 2 - s.width * 0.3);
-    s.position.set(tx + side * this.w * 0.4, this.h * 0.98);
+    s.scale.set(k);
+    const tx = this.w / 2 + side * Math.min(this.w * 0.33, this.w / 2 - s.width * 0.42);
+    s.position.set(tx + side * this.w * 0.4, this.h * 0.99);
     this.screen.addChild(s);
-    gsap.to(s, { x: tx, duration: 0.5, ease: 'back.out(1.2)' });
-    const st = { f: 0 };
-    gsap.to(st, { f: n - 1, duration: 1.4, delay: 0.3, ease: 'none', onUpdate: () => (s.texture = frames[Math.round(st.f)]) });
-    gsap.delayedCall(2.4, () => void gsap.to(s, { x: tx + side * this.w * 0.4, alpha: 0, duration: 0.4, ease: 'power2.in', onComplete: () => destroyDeep(s) }));
+    gsap.to(s, { x: tx, duration: 0.45, ease: 'back.out(1.2)', onComplete: () => s.play() });
+    // shots on the two muzzle-flash frames (9 and 13)
+    let fired = 0;
+    s.onFrameChange = (f) => {
+      if ((f === 9 || f === 13) && fired < 2) {
+        fired++;
+        sound.play('gunshot', { gain: 0.6 });
+        this.shake(8, 0.2);
+      }
+    };
+    gsap.delayedCall(3.2, () => void gsap.to(s, { x: tx + side * this.w * 0.4, alpha: 0, duration: 0.4, ease: 'power2.in', onComplete: () => destroyDeep(s) }));
   }
 
   // ----------------------------------------------------------- banners
@@ -311,31 +309,28 @@ export class Stage {
       rays.alpha = 0.7;
       layer.addChild(rays);
       gsap.to(rays, { rotation: 1.4, duration: 2.6 });
-      // Lampião draws, aims and fires (painted frame sequence)
-      const frames = seq('lamp_', 6);
-      const lamp = new Sprite(frames[0]);
+      // Lampião draws, aims and fires twice (client 24-frame sequence)
+      const lamp = new AnimatedSprite(seq('lampa_', 24));
       lamp.anchor.set(0.5, 0.55);
-      const k = (unit * 0.5) / frames[0].height;
+      lamp.loop = false;
+      lamp.animationSpeed = 0.32;
+      const k = (unit * 0.55) / lamp.texture.height;
       lamp.scale.set(k);
-      lamp.position.set(-lamp.width, this.h * 0.62);
+      lamp.position.set(-lamp.width, this.h * 0.6);
       layer.addChild(lamp);
-      await gsap.to(lamp, { x: this.w / 2 - unit * 0.06, duration: 0.45, ease: 'back.out(1.3)' });
-      this.sfx.dustBurst(this.w / 2, this.h * 0.9, 12, 380);
-      const step = { f: 0 };
-      await gsap.to(step, { f: 5, duration: 0.75, ease: 'none', onUpdate: () => (lamp.texture = frames[Math.round(step.f)]) });
-      // shot!
-      const mx = lamp.x + lamp.width * 0.42;
-      const my = lamp.y - lamp.height * 0.02;
-      sound.play('arrival');
-      this.shake(18);
-      const flash = this.sfx.spawn(tex('muzzle_1'), mx, my, { life: 0.25, scale: k * 0.7, add: true });
-      void flash;
-      this.sfx.spawn(tex('blast_1'), mx + unit * 0.05, my, { life: 0.55, scale: k * 0.6, add: true, grow: 0.5 });
-      for (let i = 0; i < 4; i++) this.sfx.spawn(tex(`smoke_${i}`), mx + unit * 0.04, my, { vx: 80 + Math.random() * 120, vy: -40 - Math.random() * 60, life: 1.3, scale: k * 0.45, alpha: 0.7, grow: 0.3, drag: 1 });
-      for (let i = 0; i < 3; i++) this.sfx.spawn(tex(i % 2 ? 'casing_1' : 'casing_2'), lamp.x + lamp.width * 0.15, my, { vx: -120 - Math.random() * 160, vy: -380 - Math.random() * 120, g: 1400, life: 1.0, scale: k * 0.22, vr: 12 });
-      this.sfx.sparkBurst(mx, my, 30, 520);
-      gsap.to(lamp, { x: lamp.x - unit * 0.02, duration: 0.06, yoyo: true, repeat: 1 });
-      await wait(700);
+      await gsap.to(lamp, { x: this.w / 2, duration: 0.45, ease: 'back.out(1.3)' });
+      lamp.onFrameChange = (f) => {
+        if (f === 9 || f === 13) {
+          sound.play(f === 9 ? 'arrival' : 'gunshot');
+          this.shake(14, 0.25);
+          this.sfx.sparkBurst(lamp.x + lamp.width * 0.3, lamp.y - lamp.height * 0.05, 20, 420);
+        }
+      };
+      await new Promise<void>((res) => {
+        lamp.onComplete = () => res();
+        lamp.play();
+      });
+      await wait(250);
       await gsap.to(lamp, { y: -lamp.height, alpha: 0, duration: 0.4, ease: 'power2.in' });
     } else {
       sound.play('raid');

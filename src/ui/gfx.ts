@@ -14,13 +14,14 @@ export const T = {
   rays: (): Texture => tex('fx_rays'),
   dust: (): Texture => tex(`smoke_${Math.floor(Math.random() * 4)}`),
   flare: (): Texture => tex(`flare_${Math.floor(Math.random() * 5)}`),
-  coinSpin: (): Texture[] => seq('coinspin_', 7),
+  coinSpin: (): Texture[] => seq('coinb_', 15),
+  sparkB: (): Texture => tex(`sparkb_${Math.floor(Math.random() * 8)}`),
   flower: (): Texture => tex(`flower_${Math.floor(Math.random() * 3)}`),
   smoke: (): Texture => tex('fx_smoke'),
   ember: (): Texture => tex('fx_ember'),
   lensFlare: (): Texture => tex('fx_flare'),
   shine: (): Texture => tex('fx_shine'),
-  coin: (): Texture => tex('coinspin_0'),
+  coin: (): Texture => tex('coinb_14'),
 };
 
 export const FONT_TITLE = 'Rye, Georgia, serif';
