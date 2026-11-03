@@ -144,14 +144,24 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/MATH_ASSUMPTIONS.m
 
 ## Art & audio
 
-- **Art:** the symbols, characters (including the winking Lampião), logo, bonus cards, HUD buttons, panels, badges and effects come from the client's painted asset sheet (`art/source/sheet_v5.webp`). It is cut and packed automatically; see [`docs/ART_AND_AUDIO.md`](docs/ART_AND_AUDIO.md). Backgrounds, reel frames and chests are code-drawn.
-- **Character animation:** Lampião's Arrival plays his painted draw-aim-fire sequence, with muzzle flash, smoke and casings. Lampião and Maria also appear in the bonus intros and the Couple's Fortune.
-- **Language:** the game interface is in Brazilian Portuguese, with `pt-BR` number formatting.
-- **Score:** an original forró / baião soundtrack with layered intensity stems and 40 sound effects.
+- **Art:** the client's painted art packs supply everything visible:
+  - the sunset village background and the galloping-rider animation;
+  - the western display font, used for all amounts and titles;
+  - the logo, Bonus Buy badge, bonus cards, HUD panels and buttons, and the reel frame;
+  - the 14 symbols (including the winking Lampião) and the character sequences.
+
+  These are cut and packed automatically; see [`docs/ART_AND_AUDIO.md`](docs/ART_AND_AUDIO.md).
+- **Language:** the interface is in English.
+- **Music:** an original sertão soundtrack, with fifes, sanfona, zabumba and triangle, rendered offline with dynamic intensity:
+  - a near miss (two bonus symbols) brings in the tension layer;
+  - the last-reel suspense raises it further;
+  - a bonus hit brings in the full drive layer.
+
+  There are also 40 synchronised sound effects.
 
 ## Remaining placeholders and limitations
 
-- **Art:** backgrounds, reel frames and chests are still code-drawn. The art sheet is fairly low resolution, so large on-screen uses (bonus intro titles, the logo on big screens) look soft. A 2–4× export of the same sheet would fix this.
+- **Art:** the Hideout chests, the Last Stand emblem and the win banners are still code-drawn. The symbol sheet is fairly low resolution, so very large uses look soft. A 2–4× export of it would fix that.
 - **Audio:** the music and effects are synthesised (modelled instruments), not recorded live. Recorded stems can be dropped in with the same names and loop metadata.
 - **Mathematics:** every value is a development default (see `docs/MATH_ASSUMPTIONS.md`).
 - **Platform:** the wallet and RNG are simulated and development-only. Responsible-gaming tools, localisation and jurisdiction configuration are not implemented.

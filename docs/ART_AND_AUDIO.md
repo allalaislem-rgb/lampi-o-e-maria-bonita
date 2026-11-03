@@ -2,47 +2,32 @@
 
 ## Art
 
-The main artwork comes from the **client's painted asset sheet** `art/source/sheet_v5.webp`
-(1125×750, true alpha). It covers the 14 reel symbols (including the winking Lampião and his Wild),
-the character frame sequences, logo, bonus title cards, HUD buttons, panels, multiplier badges,
-spinning coins, flares, smoke, muzzle flashes, casings, flowers and the glowing card frames.
+All artwork comes from the client's painted art packs in `art/source/`. Two scripts cut them automatically.
 
-`tools/art/cut_sheet.py` cuts it automatically:
+**`tools/art/cut_v6.py`** (art pack 6) produces:
 
-- removes the faint alpha haze around every sprite (alpha below about 24 is dropped);
-- keeps only the main shape, so slivers of neighbouring sprites are discarded;
-- fits each reel symbol into a uniform 480×432 canvas;
-- upscales the smaller items with Lanczos plus light sharpening;
-- writes the HUD images to `public/ui/*.webp`.
-
-Pieces the sheet does not contain are still **code-drawn** (`tools/art/*.mjs`, rasterised by
-`render.mjs` in headless Chromium):
-
-- the four parallax backgrounds;
-- the three reel frames;
-- the Hideout chests, Lampião's Emblem (Last Stand), medallion, heart and lantern;
-- the Portuguese win banners (GRANDE / MEGA GANHO, GANHO ÉPICO);
-- generic VFX (glow, ring, rays, shine);
-- the small SVG buttons (−, +, close, settings, music).
-
-Everything is packed into WebP texture atlases by `pack.py`:
-
-| Atlas | Contents |
+| Source | What becomes of it |
 |---|---|
-| `symbols` | The 14 symbols, each with a pre-rendered motion-blur variant |
-| `objects` | Badges, coins, FX, props and panels |
-| `chars` | Lampião and Maria frame sequences and the glowing card frames |
+| `in_6.webp` | Sunset village background. Used in every mode, colour-graded per mode. |
+| `in_7.webp` | Rider gallop, 24 frames. Frames 0–7 are the approach, 8–23 the gallop loop. Used for the riders crossing the plain and the Great Escape intro. |
+| `in_8.webp` | Western display font. Converted to an AngelCode bitmap font (`public/fonts/western.fnt` and `.png`). The alpha comes from luminance, so the glow is kept. Accented capitals (Ã Õ Á É Í Ó Ú Â Ê Ô À Ç) are drawn to match. |
+| `in_9.webp` | UI kit: the logo, the three bonus cards (Bonus Buy and intros), SPIN / AUTO buttons, the BONUS BUY badge, x-multiplier badges, the BALANCE / WIN / BET panels (with the baked sample text erased), icons and plaques. |
+| `in_10.webp` | Reel frame. Its inner window is mapped onto the 5×3 reel area, so the lanterns, cacti, skull and wheel overlap the edges slightly. |
+
+**`tools/art/cut_sheet.py`** (`sheet_v5.webp`) produces the 14 reel symbols (the winking Lampião and his Wild), the Lampião and Maria frame sequences, coins, flares, smoke, muzzle flashes and the glowing card frames.
+
+Only the Hideout chests, Lampião's Emblem in The Last Stand, the generic glow and ring effects, and the BIG / MEGA / EPIC WIN banners are still code-drawn (`tools/art/*.mjs`).
+
+**Where the western font is used:**
+
+- **Canvas text:** big numbers and titles through Pixi `BitmapText`. If a string contains a character the font lacks (apostrophes, lowercase), it falls back to the gold Rye text.
+- **HTML HUD:** balance, bet, win, Buy prices and the autoplay counter, drawn by a small canvas renderer (`src/ui/westernDom.ts`).
 
 To regenerate the art you need Playwright with Chromium and Python 3 with Pillow and SciPy:
 
 ```bash
 npm run art
 ```
-
-**Resolution note.** The sheet is 1125 px wide, so a reel symbol is about 200 px in the source and is
-upscaled about 2.2× for the 480 px symbol canvas. Large uses, such as the full-screen title cards in
-bonus intros, are visibly soft. A higher-resolution export of the same sheet (2×–4×) can be dropped in
-at the same coordinates scaled up; only the boxes in `cut_sheet.py` need multiplying.
 
 ## Audio pipeline
 
@@ -65,7 +50,7 @@ run in sample-accurate sync and the runtime crossfades between them:
 
 | Mode | Main stem | Intensity layer (when it rises) |
 |---|---|---|
-| Base game | Baião in G mixolydian, 100 BPM: zabumba, triangle, viola, accordion melody | Tremolo strings and shaker. Rises during scatter anticipation and on bonus triggers |
+| Base game | Sertão baião in D mixolydian, 104 BPM. A *banda de pífanos* lead (two fifes in thirds) over sanfona offbeat chords, zabumba, triangle and bass | Two layers. **Tension** (tremolo strings, shaker 16ths, heartbeat zabumba, sanfona drone) comes in on a near miss with 2 scatters, then eases off after about 4 s. The suspense on the last reels pushes it further. **Drive** (doubled zabumba, taiko, brass stabs, fife an octave up) comes in at full level when a bonus hits |
 | The Great Escape | Fast forró in D mixolydian, 138 BPM, accordion runs | Brass stabs and pandeiro. Follows the Escape Multiplier |
 | The Hideout | Mysterious viola arpeggios in E minor, 76 BPM, music box | Heartbeat and high strings on the last pick |
 | The Last Stand | War drums in A phrygian dominant, 96 BPM, low-string ostinato, brass | Snare rolls, choir pad and anvils when 1 respin is left or the grid is nearly full |
