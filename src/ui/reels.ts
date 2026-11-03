@@ -445,11 +445,12 @@ export class ReelsView extends Container {
         duration: dur * 1.1,
         ease: 'power1.inOut',
         onUpdate: () => {
+          if (fl.destroyed) return;
           const i = Math.min(pts.length - 2, Math.floor(q.v));
           const f = q.v - i;
           fl.position.set(pts[i].x + (pts[i + 1].x - pts[i].x) * f, pts[i].y + (pts[i + 1].y - pts[i].y) * f);
         },
-        onComplete: () => void gsap.to(fl, { alpha: 0, duration: 0.2, onComplete: () => { gsap.killTweensOf(fl); if (!fl.destroyed) fl.destroy(); } }),
+        onComplete: () => void (!fl.destroyed && gsap.to(fl, { alpha: 0, duration: 0.2, onComplete: () => { gsap.killTweensOf(fl); if (!fl.destroyed) fl.destroy(); } })),
       });
     }
   }
